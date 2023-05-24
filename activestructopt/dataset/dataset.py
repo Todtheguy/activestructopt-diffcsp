@@ -1,5 +1,6 @@
 import requests
 from pymatgen.core.structure import Structure
+from pymatgen.analysis.diffraction.xrd import XRDCalculator
 from pymatgen.io import feff
 import os
 
@@ -12,12 +13,15 @@ def get_structure(mpid, api_key):
     return Structure.from_dict(response.json()['data'][0]['structure'])
 
 def get_feff_inp(struct, atoms_r = 5.0, scf_r = 4.0, fms_r = 4.0, kpts = 100):
-    struct = get_structure(mpid)
     # guarantees at least two atoms of the absorber, 
     # which is necessary because two different ipots are created
     struct.make_supercell(2)
-    feff.inputs.Atoms(struct, [x.symbol for x in struct.species].index('Co'), atoms_r).write_file()
-    feff.inputs.Potential(struct, [x.symbol for x in struct.species].index('Co')).write_file()
+    feff.inputs.Atoms(struct, 
+        [x.symbol for x in struct.species].index('Co'), 
+        atoms_r
+        ).write_file()
+    feff.inputs.Potential(struct, 
+        [x.symbol for x in struct.species].index('Co')).write_file()
     feff.inputs.Tags({
         "TITLE": "Lithium Cobalt Oxide",
         "CONTROL": "1 1 1 1 1 1",
@@ -42,3 +46,18 @@ def get_feff_inp(struct, atoms_r = 5.0, scf_r = 4.0, fms_r = 4.0, kpts = 100):
     os.remove('ATOMS')
     os.remove('POTENTIALS')
     os.remove('PARAMETERS')
+
+def get_XRD_pattern(structure, 
+    wavelength='CuKa', 
+    debye_waller_factors=None, 
+    scaled=True, 
+    two_theta_range=(0, 90)
+    ):
+    return XRDCalculator(
+        wavelength = wavelength, 
+        debye_waller_factors = debye_waller_factors
+    ).get_pattern(
+        structure, 
+        scaled = scaled, 
+        two_theta_range = two_theta_range
+    )
