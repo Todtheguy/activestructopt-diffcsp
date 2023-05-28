@@ -3,7 +3,7 @@ import numpy as np
 from pymatgen.analysis.diffraction.xrd import XRDCalculator
 
 def get_XRD_pattern(structure, 
-    thetas,
+    thetas = np.arange(0, 0.01, 90),
     σ = 0.2,
     wavelength='CuKa', 
     debye_waller_factors=None, 
