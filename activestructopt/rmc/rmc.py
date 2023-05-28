@@ -54,4 +54,4 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             old_structure = copy.deepcopy(new_structure)
             old_𝛘2 = new_𝛘2
 
-    return structures, 𝛘2s, accept
+    return structures, 𝛘2s, accepts
