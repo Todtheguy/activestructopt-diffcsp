@@ -37,7 +37,7 @@ def get_random_structures(stoichiometry, N, api_key):
     np.random.shuffle(comp_indices)
     for s in structs:
         for i in range(nsites):
-            j = i
+            j = i + 1
             for k in stoichiometry.keys():
                 j -= stoichiometry[k]
                 if j <= 0:
