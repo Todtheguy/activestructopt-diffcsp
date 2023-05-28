@@ -41,7 +41,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
         new_structure = step(structure, latticeprob, σr, σl, σθ)
         new_𝛘2 = 𝛘2(exp, optfunc(new_structure, **(args)), σ)
         Δχ2 = new_𝛘2 - old_𝛘2
-        accept = np.random.rand() < exp(-Δχ2/2) and not reject(new_structure)
+        accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
         structures.append(new_structure)
         𝛘2s.append(new_𝛘2)
         accepts.append(accept)
