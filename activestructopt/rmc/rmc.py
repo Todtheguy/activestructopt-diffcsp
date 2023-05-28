@@ -10,15 +10,18 @@ def step(structure, latticeprob, σr, σl, σθ):
     return new_struct
 
 def lattice_step(structure, σl, σθ):
-    structure.lattice.a = np.maximum(0.0, 
-        structure.lattice.a + σl * np.random.randn())
-    structure.lattice.b = np.maximum(0.0, 
-        structure.lattice.b + σl * np.random.randn())
-    structure.lattice.c = np.maximum(0.0, 
-        structure.lattice.c + σl * np.random.randn())
-    structure.lattice.alpha += σθ * np.random.randn()
-    structure.lattice.beta += σθ * np.random.randn()
-    structure.lattice.gamma += σθ * np.random.randn()
+    try:
+        structure.lattice.a = np.maximum(0.0, 
+            structure.lattice.a + σl * np.random.randn())
+        structure.lattice.b = np.maximum(0.0, 
+            structure.lattice.b + σl * np.random.randn())
+        structure.lattice.c = np.maximum(0.0, 
+            structure.lattice.c + σl * np.random.randn())
+        structure.lattice.alpha += σθ * np.random.randn()
+        structure.lattice.beta += σθ * np.random.randn()
+        structure.lattice.gamma += σθ * np.random.randn()
+    except:
+        print(structure)
 
 def positions_step(structure, σr):
     atom_i = np.random.choice(range(len(structure)))
