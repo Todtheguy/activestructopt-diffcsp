@@ -41,6 +41,7 @@ def get_random_structures(stoichiometry, N, api_key):
             for k in stoichiometry.keys():
                 j -= stoichiometry[k]
                 if j <= 0:
-                    s.sites[comp_indices[i]].species = Composition(k + '1')
+                    s.sites[comp_indices[i]].species = Composition(
+                        k.symbol + '1')
                     break
     return structs
