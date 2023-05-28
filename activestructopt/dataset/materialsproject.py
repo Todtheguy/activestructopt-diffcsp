@@ -33,7 +33,8 @@ def get_random_structures(stoichiometry, N, api_key):
             d['structure']) for d in response.json()['data']])
     structs = [structures[i] for i in np.random.choice(
         range(len(structures)), N)]
-    comp_indices = np.random.shuffle(range(nsites))
+    comp_indices = np.arange(nsites)
+    np.random.shuffle(comp_indices)
     for s in structs:
         for i in range(nsites):
             j = i
