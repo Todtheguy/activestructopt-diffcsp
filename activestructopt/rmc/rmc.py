@@ -29,7 +29,7 @@ def positions_step(structure, σr):
         σr * np.random.randn() / structure.lattice.c) % 1
 
 def 𝛘2(exp, th, σ):
-    return np.mean(exp - th) / (σ ** 2)
+    return np.mean((exp - th) ** 2) / (σ ** 2)
 
 def reject(structure):
     dists = structure.distance_matrix.flatten()
