@@ -4,7 +4,7 @@ import numpy as np
 def get_dist(a, b):
   return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
 
-def get_rdf(structure, rs, σ):
+def get_rdf(structure, rs = np.arange(0.1, 10.0, 0.001), σ = 0.05):
   p = len(structure) / structure.volume
   rmax = np.max(rs) + 3 * σ
   dists = []
