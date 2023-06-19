@@ -39,9 +39,9 @@ def mcmc(optfunc, args, exp, structure, N, tol = 0.1):
         structures.append(structure.copy())
         p = loglikelihood(exp, optfunc(structure, **(args)), σ)
         loglikelihoods.append(p)
-
-        if np.log(np.random.uniform(0.,1.)) < p - loglikelihoods[last_accept]:
-            accepts.append(True)
-            last_accept = 1
+        accept = np.log(np.random.uniform(0.,1.)) < (
+            p - loglikelihoods[last_accept])
+        accepts.append(accept)
+        last_accept = i if last_accept else last_accept
 
     return structures, loglikelihoods, accepts
