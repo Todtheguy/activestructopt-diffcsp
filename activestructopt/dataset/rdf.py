@@ -5,7 +5,7 @@ def get_dist(a, b):
   return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
 
 def get_rdf(structure, σ = 0.05):
-  rs = np.arange(0.0, 12.0, 0.001)
+  rs = np.arange(0.001, 12.0, 0.001)
   full_rs = np.arange(-14.0, 14.0, 0.001)
   norm_pdf = norm.pdf(full_rs, 0.0, σ)
   p = len(structure) / structure.volume
@@ -16,5 +16,5 @@ def get_rdf(structure, σ = 0.05):
     dists.extend(list(filter(lambda x: x > 0, 
       map(lambda n: get_dist(structure.sites[i].coords, n.coords), neighbors))))
   return sum(map(lambda d: norm_pdf[
-    (14000 - round(1000 * d)):(26000 - round(1000 * d))], dists)
+    (14001 - round(1000 * d)):(26000 - round(1000 * d))], dists)
     ) / (p * (4/3) * np.pi * rs ** 3)
