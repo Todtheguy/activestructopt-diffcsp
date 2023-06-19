@@ -14,7 +14,7 @@ def mcmc_step(structure, tol):
 def loglikelihood(exp, th, σ):
     to_return = 0
     assert len(exp) == len(th)
-    for i in len(exp):
+    for i in range(len(exp)):
         to_return += norm.logpdf(exp[i] - th[i], 0, σ)
     return to_return
 
@@ -39,7 +39,7 @@ def mcmc(optfunc, args, exp, structure, N, tol = 0.1):
         structures.append(structure.copy())
         p = loglikelihood(exp, optfunc(structure, **(args)), σ)
         loglikelihoods.append(p)
-        
+
         if np.log(np.random.uniform(0.,1.)) < p - loglikelihoods[last_accept]:
             accepts.append(True)
             last_accept = 1
