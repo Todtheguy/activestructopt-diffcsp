@@ -16,5 +16,5 @@ def get_rdf(structure, σ = 0.05):
     dists.extend(list(filter(lambda x: x > 0, 
       map(lambda n: get_dist(structure.sites[i].coords, n.coords), neighbors))))
   return sum(map(lambda d: norm_pdf[
-    (14000 - round(1000 * dists)):(24001 - round(1000 * dists))], dists)
+    (14000 - round(1000 * d)):(24001 - round(1000 * d))], dists)
     ) / (p * (4/3) * np.pi * rs ** 3)
