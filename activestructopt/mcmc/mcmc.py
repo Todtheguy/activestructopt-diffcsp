@@ -3,12 +3,9 @@ from scipy.stats import norm
 
 def mcmc_step(structure, tol):
     for i in range(len(structure)):
-        structure.sites[i].a = (np.random.uniform(0., tol) / 
-            structure.lattice.a) % 1
-        structure.sites[i].b = (np.random.uniform(0., tol) / 
-            structure.lattice.a) % 1
-        structure.sites[i].c = (np.random.uniform(0., tol) / 
-            structure.lattice.c) % 1
+        structure.sites[i].a = (np.random.uniform(0., tol) ) % 1
+        structure.sites[i].b = (np.random.uniform(0., tol) ) % 1
+        structure.sites[i].c = (np.random.uniform(0., tol) ) % 1
     return structure
 
 def loglikelihood(exp, th, σ):
