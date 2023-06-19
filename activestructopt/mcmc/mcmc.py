@@ -42,6 +42,7 @@ def mcmc(optfunc, args, exp, structure, N, tol = 0.1):
         accept = np.log(np.random.uniform(0.,1.)) < (
             p - loglikelihoods[last_accept])
         accepts.append(accept)
-        last_accept = i if last_accept else last_accept
+        last_accept = i if accept else last_accept
+        structure = structure if accept else structures[last_accept]
 
     return structures, loglikelihoods, accepts
