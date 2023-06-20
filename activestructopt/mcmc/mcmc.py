@@ -9,7 +9,7 @@ def mcmc_step(structure, tol, σ, σtol):
             np.random.uniform(-tol/2, tol/2) / structure.lattice.b) % 1
         structure.sites[i].c = (structure.sites[i].c + 
             np.random.uniform(-tol/2, tol/2) / structure.lattice.c) % 1
-    σ = max(0, min(1, σ + np.random.uniform(-σtol/2, σtol/2)))
+    σ = max(0, min(10, σ + np.random.uniform(-σtol/2, σtol/2)))
     return structure
 
 def loglikelihood(exp, th, σ):
@@ -28,7 +28,7 @@ def mcmc(optfunc, args, exp, structure, N, tol = 0.1, σtol = 0.05):
         structure.sites[i].c = np.random.uniform(0.,1.)
 
     # Uniform prior distribution for noise (TODO: Change this)
-    σ = np.random.uniform(0.,1.)
+    σ = np.random.uniform(0.,10.)
 
     structures = [structure.copy()]
     loglikelihoods = [loglikelihood(exp, optfunc(structure, **(args)), σ)]
