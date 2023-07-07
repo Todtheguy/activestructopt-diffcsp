@@ -22,11 +22,11 @@ def lattice_step(structure, σl, σθ):
 def positions_step(structure, σr):
     atom_i = np.random.choice(range(len(structure)))
     structure.sites[atom_i].a = (structure.sites[atom_i].a + 
-        σr * np.random.randn() / structure.lattice.a) % 1
+        σr * np.random.rand() / structure.lattice.a) % 1
     structure.sites[atom_i].b = (structure.sites[atom_i].b + 
-        σr * np.random.randn() / structure.lattice.b) % 1
+        σr * np.random.rand() / structure.lattice.b) % 1
     structure.sites[atom_i].c = (structure.sites[atom_i].c + 
-        σr * np.random.randn() / structure.lattice.c) % 1
+        σr * np.random.rand() / structure.lattice.c) % 1
 
 def 𝛘2(exp, th, σ):
     return np.mean((exp - th) ** 2) / (σ ** 2)
