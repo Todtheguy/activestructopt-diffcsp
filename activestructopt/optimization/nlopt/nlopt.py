@@ -22,7 +22,9 @@ def run_nlopt(optfunc, args, exp, structure, N):
     def f(x, grad):
         assert not (grad.size > 0)
         modify_structure(x)
-        return np.mean((exp - optfunc(structure, **(args))) ** 2)
+        to_return = np.mean((exp - optfunc(structure, **(args))) ** 2)
+        print(to_return)
+        return to_return
 
     opt = nlopt.opt(nlopt.GN_ISRES, natoms)
     opt.set_min_objective(f)
