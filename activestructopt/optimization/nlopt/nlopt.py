@@ -26,7 +26,7 @@ def run_nlopt(optfunc, args, exp, structure, N):
         print(to_return)
         return to_return
 
-    opt = nlopt.opt(nlopt.GN_ISRES, natoms)
+    opt = nlopt.opt(nlopt.GN_ISRES, 3 * natoms)
     opt.set_min_objective(f)
     opt.set_lower_bounds(np.zeros(natoms))
     opt.set_upper_bounds(np.ones(natoms))
