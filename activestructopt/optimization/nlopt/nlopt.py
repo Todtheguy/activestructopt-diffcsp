@@ -19,9 +19,10 @@ def run_nlopt(optfunc, args, exp, structure, N):
             structure.sites[i].b = x[3 * i + 1]
             structure.sites[i].c = x[3 * i + 2]
 
-    def f(x, _):
+    def f(x, grad):
+        assert not (grad.size > 0)
         modify_structure(x)
-        return np.sum((exp - optfunc(structure, **(args))) ** 2)
+        return np.mean((exp - optfunc(structure, **(args))) ** 2)
 
     opt = nlopt.opt(nlopt.GN_ISRES, natoms)
     opt.set_min_objective(f)
