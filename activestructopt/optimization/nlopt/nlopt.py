@@ -4,7 +4,7 @@ import nlopt
 from numpy import *
 import numpy as np
 
-def nlopt(optfunc, args, exp, structure, N):
+def run_nlopt(optfunc, args, exp, structure, N):
     natoms = len(structure)
 
     xstart = []
