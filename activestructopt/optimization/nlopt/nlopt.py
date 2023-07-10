@@ -28,8 +28,8 @@ def run_nlopt(optfunc, args, exp, structure, N):
 
     opt = nlopt.opt(nlopt.GN_ISRES, 3 * natoms)
     opt.set_min_objective(f)
-    opt.set_lower_bounds(np.zeros(natoms))
-    opt.set_upper_bounds(np.ones(natoms))
+    opt.set_lower_bounds(np.zeros(3 * natoms))
+    opt.set_upper_bounds(np.ones(3 * natoms))
     opt.set_maxeval(N)
     return opt.optimize(xstart)
 
