@@ -6,6 +6,7 @@ import numpy as np
 
 def run_nlopt(optfunc, args, exp, structure, N):
     natoms = len(structure)
+    structures = []
 
     xstart = []
     for i in range(natoms):
@@ -22,6 +23,7 @@ def run_nlopt(optfunc, args, exp, structure, N):
     def f(x, grad):
         assert not (grad.size > 0)
         modify_structure(x)
+        structures.append(structure.copy())
         return np.mean((exp - optfunc(structure, **(args))) ** 2)
 
     opt = nlopt.opt(nlopt.GN_ISRES, 3 * natoms)
@@ -30,6 +32,6 @@ def run_nlopt(optfunc, args, exp, structure, N):
     opt.set_upper_bounds(np.ones(3 * natoms))
     opt.set_maxeval(N)
     modify_structure(opt.optimize(xstart))
-    return structure
+    return structure, structures
 
 
