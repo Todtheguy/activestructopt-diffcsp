@@ -17,7 +17,7 @@ task:
   write_output: [train, val, test]
   # Specify if labels are provided for the predict task
   # labels: True
-  use_amp: True  
+  use_amp: False  
 
 model:
   name: CGCNN    
@@ -39,7 +39,7 @@ model:
   gradient: False
 
 optim:
-  max_epochs: 1000
+  max_epochs: 100
   max_checkpoint_epochs: 0
   lr: 0.001
   # Either custom or from torch.nn.functional library. If from torch, loss_type is TorchLossWrapper
