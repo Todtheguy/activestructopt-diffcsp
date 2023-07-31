@@ -29,7 +29,7 @@ model:
   post_fc_count: 3
   pool: global_mean_pool
   pool_order: early
-  batch_norm: False
+  batch_norm: True
   batch_track_stats: True
   act: relu
   dropout_rate: 0.0
