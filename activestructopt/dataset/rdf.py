@@ -12,7 +12,7 @@ def get_rdf(structure, σ = 0.05, dr = 0.01, max_r = 12.0):
     # modified from pymatgen's get_site_in_spheres
     for p in structure._lattice.get_points_in_sphere(site_fcoords, 
         structure.sites[i].coords, rmax):
-      if 0.5 <= p[1]:
+      if 0.5 <= p[1] and p[1] < rmax:
         rdf[int((p[1] - 0.5) / dr)] += 1
   
   return np.convolve(np.array(rdf) / normalization, 
