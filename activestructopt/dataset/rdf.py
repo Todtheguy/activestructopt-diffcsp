@@ -19,4 +19,5 @@ def get_rdf(structure, σ = 0.05, dr = 0.01, max_r = 12.0):
     inds = dists < (r + dr)
     rdf.append(np.sum(inds) / (len(structure) * p * 4 * np.pi * r ** 2))
     dists = dists[np.invert(inds)]
-  return np.convolve(rdf, norm.pdf(np.arange(-5 * σ, 5 * σ + dr, dr), 0.0, σ), mode="same")[0:(len(rs) - int(np.floor((5 * σ) / dr)) - 1)]
+  return np.convolve(rdf, norm.pdf(np.arange(-5 * σ, 5 * σ + dr, dr), 0.0, σ), 
+    mode="same")[0:(len(rs) - int(np.floor((5 * σ) / dr)) - 1)]
