@@ -39,7 +39,7 @@ model:
   gradient: False
 
 optim:
-  max_epochs: 1000
+  max_epochs: 100
   max_checkpoint_epochs: 0
   lr: 0.001
   # Either custom or from torch.nn.functional library. If from torch, loss_type is TorchLossWrapper
@@ -64,12 +64,17 @@ dataset:
   name: test_data
   processed: False
   # Path to data files - this can either be in the form of a string denoting a single path or a dictionary of {train: train_path, val: val_path, test: test_path, predict: predict_path}
-  src: MatDeepLearn_dev/data/data.json
+  src: {
+    train: 'data/train_data.json', 
+    val: 'data/val_data.json', 
+    test: 'data/test_data.json', 
+  }
+  
   # Path to target file within data_path - this can either be in the form of a string denoting a single path or a dictionary of {train: train_path, val: val_path, test: test_path} or left blank when the dataset is a single json file
   # Example: target_path: "data/raw_graph_scalar/targets.csv"
   target_path: 
   # Path to save processed data.pt file
-  pt_path: MatDeepLearn_dev/data/
+  pt_path: data/
   # Either "node" or "graph"
   prediction_level: graph
   
@@ -107,7 +112,3 @@ dataset:
     # Method of obtaining atom dictionary: available: (onehot)
     node_representation: onehot    
     all_neighbors: True
-  # Ratios for train/val/test split out of a total of less than 1
-  train_ratio: 0.8
-  val_ratio: 0.05
-  test_ratio: 0.15
