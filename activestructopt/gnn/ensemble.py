@@ -29,8 +29,8 @@ class ConfigSetup:
 class Ensemble:
   def __init__(self, ensembleN, config_path):
     self.config_path = config_path
-    self.config = build_config(ConfigSetup('train', config_path), 0)
-    process_data(config["dataset"])
+    self.config = build_config(ConfigSetup('train', self.config_path), 0)
+    process_data(self.config["dataset"])
     self.ensemble = [Runner() for _ in range(ensembleN)]
   
   def train(self):
