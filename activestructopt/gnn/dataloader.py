@@ -1,4 +1,5 @@
 import numpy as np
+from pymatgen.io.ase import AseAtomsAdaptor
 import torch
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
@@ -26,7 +27,7 @@ class PrepareData(Dataset):
     ):
         # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
         self.data = Data()
-
+        adaptor = AseAtomsAdaptor()
         n_atoms = len(structure)
         ase_crystal = adaptor.get_atoms(structure)
         self.data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
