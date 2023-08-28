@@ -48,5 +48,4 @@ class Ensemble:
               ensemble.ensemble[i].trainer.model.forward(
                   batch)['output'].cpu().detach().numpy()[0])
 
-      return np.mean(np.array(ensemble_results), 0), 
-          np.std(np.array(ensemble_results), 0)
+      return np.mean(np.array(ensemble_results), 0), np.std(np.array(ensemble_results), 0)
