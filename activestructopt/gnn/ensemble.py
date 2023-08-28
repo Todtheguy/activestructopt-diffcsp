@@ -32,7 +32,7 @@ class Ensemble:
     process_data(config["dataset"])
     self.ensemble = [Runner() for _ in range(ensembleN)]
   
-  def train():
+  def train(self):
     for runner in self.ensemble:
       runner(config, ConfigSetup('train', config_path))
       runner.trainer.model.eval()
