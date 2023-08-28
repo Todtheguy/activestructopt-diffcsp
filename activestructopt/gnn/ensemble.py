@@ -28,11 +28,12 @@ class ConfigSetup:
 
 class Ensemble:
   def __init__(self, ensembleN, config_path):
-    config = build_config(ConfigSetup('train', config_path), 0)
+    self.config_path = config_path
+    self.config = build_config(ConfigSetup('train', config_path), 0)
     process_data(config["dataset"])
     self.ensemble = [Runner() for _ in range(ensembleN)]
   
   def train(self):
     for runner in self.ensemble:
-      runner(config, ConfigSetup('train', config_path))
+      runner(self.config, ConfigSetup('train', self.config_path))
       runner.trainer.model.eval()
