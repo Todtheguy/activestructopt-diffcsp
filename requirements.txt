@@ -2,3 +2,5 @@ pymatgen==2023.5.10
 scipy==1.10.1
 numpy==1.22.4
 nlopt==2.7.1
+json
+ase
