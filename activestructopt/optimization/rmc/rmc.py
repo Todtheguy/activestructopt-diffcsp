@@ -39,19 +39,22 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
     structures = []
     𝛘2s = []
     accepts = []
+    uncertainties = []
     old_structure = structure
     old_𝛘2 = 𝛘2(exp, optfunc(old_structure, **(args)), σ)
 
     for _ in range(N):
         new_structure = step(old_structure, latticeprob, σr, σl, σθ)
-        new_𝛘2 = 𝛘2(exp, optfunc(new_structure, **(args)), σ)
+        res, resσ = optfunc(new_structure, **(args))
+        new_𝛘2 = 𝛘2(exp, res, σ)
         Δχ2 = new_𝛘2 - old_𝛘2
         accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
         structures.append(new_structure)
         𝛘2s.append(new_𝛘2)
         accepts.append(accept)
+        uncertainties.append(np.mean(resσ))
         if accept:
             old_structure = copy.deepcopy(new_structure)
             old_𝛘2 = new_𝛘2
 
-    return structures, 𝛘2s, accepts
+    return structures, 𝛘2s, accepts, uncertainties
