@@ -2,6 +2,7 @@ from matdeeplearn.common.config.build_config import build_config
 from matdeeplearn.common.trainer_context import new_trainer_context
 from matdeeplearn.preprocessor.processor import process_data
 import activestructopt.gnn.dataloader
+import numpy as np
 
 class Runner:
     def __init__(self):
