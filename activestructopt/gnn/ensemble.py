@@ -45,7 +45,7 @@ class Ensemble:
         for batch in activestructopt.gnn.dataloader.DataWrapper(1, 0).get_dataloader(
           structure, device = 'cuda'):
           ensemble_results.append(
-              ensemble.ensemble[i].trainer.model.forward(
+              self.ensemble[i].trainer.model.forward(
                   batch)['output'].cpu().detach().numpy()[0])
 
       return np.mean(np.array(ensemble_results), 0), np.std(np.array(ensemble_results), 0)
