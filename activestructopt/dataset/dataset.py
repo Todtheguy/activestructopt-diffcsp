@@ -1,3 +1,6 @@
+from pymatgen.io.ase import AseAtomsAdaptor
+import numpy as np
+
 def write_data_splits(initial_structure, folder, optfunc, args, 
                       perturbr = 0.05, N = 100, splits = (0.8, 0.05, 0.15)):
   structures = [initial_structure.copy() for i in range(N)]
