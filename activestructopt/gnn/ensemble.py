@@ -29,16 +29,20 @@ class ConfigSetup:
         self.submit = None
 
 class Ensemble:
-  def __init__(self, ensembleN, config_path):
-    self.config_path = config_path
-    self.config = build_config(ConfigSetup('train', self.config_path), 0)
-    process_data(self.config["dataset"])
-    self.ensemble = [Runner() for _ in range(ensembleN)]
+  def __init__(self, k, config, datafolder):
+    self.k = k
+    self.config = config
+    self.datafolder = datafolder
+    self.ensemble = [Runner() for _ in range(k)]
   
   def train(self):
-    for runner in self.ensemble:
-      runner(self.config, ConfigSetup('train', self.config_path))
-      runner.trainer.model.eval()
+    for i in range(self.k):
+      self.config["dataset"]["src"]["train"] = self.datafolder + "/train_k" + str(i) + ".json"
+      self.config["dataset"]["src"]["val"] = self.datafolder + "/val_k" + str(i) + ".json"
+      self.config["dataset"]["src"]["val"] = self.datafolder + "/test_data.json"
+      process_data(self.config["dataset"])
+      self.ensemble[i](self.config, ConfigSetup('train', ''))
+      self.ensemble[i].trainer.model.eval()
 
   def predict(self, structure):
       ensemble_results = []
