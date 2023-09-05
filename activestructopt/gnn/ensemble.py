@@ -46,7 +46,7 @@ class Ensemble:
 
   def predict(self, structure):
       ensemble_results = []
-      for i in range(len(self.ensemble)):
+      for i in range(self.k):
         for batch in activestructopt.gnn.dataloader.DataWrapper(1, 0).get_dataloader(
           structure, device = 'cuda'):
           ensemble_results.append(
