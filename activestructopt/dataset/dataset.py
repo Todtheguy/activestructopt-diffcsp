@@ -16,7 +16,7 @@ def write_data_splits(initial_structure, folder, optfunc, args,
   splits_to_make = [('test_data.json', test_indices)]
   for i in range(k):
       splits_to_make.append(('train_k' + str(i) + '.json', np.concatenate([kfolds[i] for i in range(5) if i != k])))
-      splits_to_make.append(('val_k' + str(i) + '.json', kfolds[k]))
+      splits_to_make.append(('val_k' + str(i) + '.json', kfolds[i]))
 
   for j in range(len(splits_to_make)):
       data_list=[]
