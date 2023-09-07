@@ -3,10 +3,11 @@ import numpy as np
 import json
 
 def write_data_splits(initial_structure, folder, optfunc, args, 
-                      perturbr = 0.5, N = 100, split = 0.85, k = 5):
+                      perturbrmin = 0.1, perturbrmax = 1.0, 
+                      N = 100, split = 0.85, k = 5):
   structures = [initial_structure.copy() for i in range(N)]
   for i in range(N):
-    structures[i].perturb(perturbr)
+    structures[i].perturb(np.random.uniform(perturbrmin, perturbrmax))
 
   structure_indices = np.random.permutation(np.arange(N))
   trainval_indices = structure_indices[:int(np.floor(split * N))]
