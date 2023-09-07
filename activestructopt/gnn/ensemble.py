@@ -67,7 +67,7 @@ class Ensemble:
     self.scalar = 1.0
     test_res = [self.predict(s) for s in test_structures]
     zscores = []
-    for i in range(test_targets):
+    for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
         zscores.append((
           test_res[i][0][j] - test_targets[i][j]) / test_res[i][1][j])
