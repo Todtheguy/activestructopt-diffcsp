@@ -3,7 +3,7 @@ import numpy as np
 import json
 
 def write_data_splits(initial_structure, folder, optfunc, args, 
-                      perturbr = 0.05, N = 100, split = 0.85, k = 5):
+                      perturbr = 0.5, N = 100, split = 0.85, k = 5):
   structures = [initial_structure.copy() for i in range(N)]
   for i in range(N):
     structures[i].perturb(perturbr)
