@@ -64,6 +64,7 @@ class Ensemble:
       np.array(ensemble_results), 0) * self.scalar
 
   def set_scalar_calibration(self, test_structures, test_targets):
+    self.scalar = 1.0
     test_res = [self.predict(s) for s in test_structures]
     zscores = []
     for i in range(test_targets):
