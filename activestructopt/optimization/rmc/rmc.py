@@ -94,3 +94,5 @@ def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
         if accept:
             old_structure = copy.deepcopy(new_structure)
             old_𝛘2 = new_𝛘2
+
+    return structures, 𝛘2s, accepts, uncertainties
