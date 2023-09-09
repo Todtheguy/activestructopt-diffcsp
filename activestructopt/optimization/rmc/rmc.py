@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+import math
 
 def step(structure, latticeprob, σr, σl, σθ):
     new_struct = copy.deepcopy(structure)
@@ -58,3 +59,38 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             old_𝛘2 = new_𝛘2
 
     return structures, 𝛘2s, accepts, uncertainties
+
+def ei(y, yhat, s):
+    return (y - yhat) * (1 / 2 + 1 / 2 * math.erf((y - yhat) / (
+        s * np.sqrt(2)))) + (s / np.sqrt(2 * np.pi)) * np.exp(
+        (-(y - yhat) ** 2) / (2 * s ** 2))
+
+def 𝛘2_ei(exp, th, thσ, σ, y):
+    # TODO: Verify that a normal approximation is appropriate here
+    yhat = np.sum((thσ ** 2) + ((exp - th) ** 2)) / (len(exp) * σ ** 2)
+    s = np.sqrt(2 * np.sum((thσ ** 4) + 2 * (thσ ** 2) * (
+        (exp - th) ** 2))) / (len(exp) * σ ** 2)
+    return y - ei(y, yhat, s)
+
+
+def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
+    structures = []
+    𝛘2s = []
+    accepts = []
+    uncertainties = []
+    old_structure = structure
+    old_𝛘2 = 𝛘2(exp, optfunc(structure, **(args)), σ)
+
+    for _ in range(N):
+        new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
+        res, resσ = optfunc(new_structure, **(args))
+        new_𝛘2 = 𝛘2_ei(exp, res, resσ, σ, best)
+        Δχ2 = new_𝛘2 - old_𝛘2
+        accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
+        structures.append(new_structure)
+        𝛘2s.append(new_𝛘2)
+        accepts.append(accept)
+        uncertainties.append(np.mean(resσ))
+        if accept:
+            old_structure = copy.deepcopy(new_structure)
+            old_𝛘2 = new_𝛘2
