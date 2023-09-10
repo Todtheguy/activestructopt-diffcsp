@@ -79,7 +79,7 @@ def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
     accepts = []
     uncertainties = []
     old_structure = structure
-    old_𝛘2 = best
+    old_𝛘2 = 0
 
     for _ in range(N):
         new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
