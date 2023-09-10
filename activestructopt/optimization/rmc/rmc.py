@@ -70,7 +70,7 @@ def 𝛘2_ei(exp, th, thσ, σ, y):
     yhat = np.sum((thσ ** 2) + ((exp - th) ** 2)) / (len(exp) * σ ** 2)
     s = np.sqrt(2 * np.sum((thσ ** 4) + 2 * (thσ ** 2) * (
         (exp - th) ** 2))) / (len(exp) * σ ** 2)
-    return y - ei(y, yhat, s)
+    return -ei(y, yhat, s)
 
 
 def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
@@ -79,7 +79,7 @@ def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
     accepts = []
     uncertainties = []
     old_structure = structure
-    old_𝛘2 = 𝛘2(exp, optfunc(structure, **(args)), σ)
+    old_𝛘2 = best
 
     for _ in range(N):
         new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
