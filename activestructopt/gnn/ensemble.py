@@ -52,14 +52,12 @@ class Ensemble:
 
   def predict(self, structure):
     ensemble_results = []
+    data = activestructopt.gnn.dataloader.prepare_data(
+      structure, device = 'cuda')
     for i in range(self.k):
-      for batch in activestructopt.gnn.dataloader.DataWrapper(
-        1, 0).get_dataloader(
-        structure, device = 'cuda'):
-        ensemble_results.append(
-            self.ensemble[i].trainer.model.forward(
-                batch)['output'].cpu().detach().numpy()[0])
-
+      ensemble_results.append(
+        self.ensemble[i].trainer.model._forward(
+        data).cpu().detach().numpy()[0])
     return np.mean(np.array(ensemble_results), 0), np.std(
       np.array(ensemble_results), 0) * self.scalar
 
