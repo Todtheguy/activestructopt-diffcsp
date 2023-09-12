@@ -24,9 +24,8 @@ class Runner:
     self.config["timestamp_id"] = self.trainer.timestamp_id
 
 class ConfigSetup:
-  def __init__(self, run_mode, config_path):
+  def __init__(self, run_mode):
       self.run_mode = run_mode
-      self.config_path = config_path
       self.seed = None
       self.submit = None
 
