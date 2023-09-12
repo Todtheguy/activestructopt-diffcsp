@@ -46,7 +46,7 @@ class Ensemble:
       self.config["dataset"]["src"]["test"] = self.datafolder + (
         "/test_data.json")
       process_data(self.config["dataset"])
-      self.ensemble[i](self.config, ConfigSetup('train', ''))
+      self.ensemble[i](self.config, ConfigSetup('train'))
       self.ensemble[i].trainer.model.eval()
 
   def predict(self, structure):
