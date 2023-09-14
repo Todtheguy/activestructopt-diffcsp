@@ -14,9 +14,8 @@ def prepare_data(
     device: str = "cpu", 
     r: float = 8.0,
     n_neighbors: int = 250,
-    edge_steps: int = 50,
+    edge_dim: int = 50,
     edge_calc_method: str = "mdl",
-    all_neighbors: bool = False,
 ):
     # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
     data = Data()
@@ -33,7 +32,6 @@ def prepare_data(
     
     edge_gen_out = calculate_edges_master(
         edge_calc_method,
-        all_neighbors,
         r,
         n_neighbors,
         num_offsets,
@@ -57,7 +55,7 @@ def prepare_data(
     data.distances = data.edge_weight
 
     generate_node_features(data, n_neighbors, device=device)
-    generate_edge_features(data, edge_steps, r, device=device)
+    generate_edge_features(data, edge_dim, r, device=device)
 
     delattr(data, "edge_descriptor")
     data.x = data.x.float()
