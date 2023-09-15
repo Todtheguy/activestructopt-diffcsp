@@ -39,12 +39,12 @@ class Ensemble:
   
   def train(self):
     for i in range(self.k):
-      self.config["dataset"]["src"]["train"] = self.datafolder + (
-        "/train_k" + str(i) + ".json")
-      self.config["dataset"]["src"]["val"] = self.datafolder + (
-        "/val_k" + str(i) + ".json")
-      self.config["dataset"]["src"]["test"] = self.datafolder + (
-        "/test_data.json")
+      #self.config["dataset"]["src"]["train"] = self.datafolder + (
+      #  "/train_k" + str(i) + ".json")
+      #self.config["dataset"]["src"]["val"] = self.datafolder + (
+      #  "/val_k" + str(i) + ".json")
+      #self.config["dataset"]["src"]["test"] = self.datafolder + (
+      #  "/test_data.json")
       process_data(self.config["dataset"])
       self.ensemble[i](self.config, ConfigSetup('train'))
       self.ensemble[i].trainer.model.eval()
