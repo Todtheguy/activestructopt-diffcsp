@@ -1,39 +1,25 @@
-from pymatgen.io.ase import AseAtomsAdaptor
+from activestructopt.gnn.dataloader import prepare_data
 import numpy as np
-import json
 
-def write_data_splits(initial_structure, folder, optfunc, args, 
+def make_data_splits(initial_structure, optfunc, args, config, 
                       perturbrmin = 0.1, perturbrmax = 1.0, 
                       N = 100, split = 0.85, k = 5):
-  structures = [initial_structure.copy() for i in range(N)]
+  structures = [initial_structure.copy() for _ in range(N)]
   for i in range(N):
     structures[i].perturb(np.random.uniform(perturbrmin, perturbrmax))
+  ys = [optfunc(structures[i], **(args)) for i in range(N)]
 
   structure_indices = np.random.permutation(np.arange(N))
   trainval_indices = structure_indices[:int(np.floor(split * N))]
   kfolds = np.array_split(trainval_indices, k)
   test_indices = structure_indices[int(np.floor(split * N)):]
-
-  splits_to_make = [('test_data.json', test_indices)]
-  for i in range(k):
-    splits_to_make.append(('train_k' + str(i) + '.json', 
-      np.concatenate([kfolds[i] for j in range(k) if j != i])))
-    splits_to_make.append(('val_k' + str(i) + '.json', kfolds[i]))
-
-  for j in range(len(splits_to_make)):
-    data_list=[]
-    adaptor = AseAtomsAdaptor()
-    for i in splits_to_make[j][1]:
-      ase_crystal = adaptor.get_atoms(structures[i])
-      data_list.append({
-        'structure_id': str(i),
-        'positions': ase_crystal.get_positions().tolist(),
-        'cell': ase_crystal.get_cell().tolist(),
-        'atomic_numbers': ase_crystal.get_atomic_numbers().tolist(),
-        'y': optfunc(structures[i], **(args)).tolist(),
-      })
-
-    with open(folder + '/' + splits_to_make[j][0], 'w') as f:
-      json.dump(data_list, f)
+  test_targets = [ys[i] for i in test_indices]
   
-  return structures, kfolds, test_indices
+  datasets = [([prepare_data(
+      structures[x], config, y = ys[x],
+      ) for x in np.concatenate(
+      [kfolds[j] for j in range(k) if j != i])], 
+      [prepare_data(
+      structures[x], config, y = ys[x]) for x in kfolds[i]]) for i in range(k)]
+  
+  return structures, datasets, kfolds, test_indices, test_targets

@@ -10,17 +10,18 @@ from matdeeplearn.preprocessor.helpers import (
 
 def prepare_data(
     structure, 
-    num_offsets: int = 2,
-    device: str = "cpu", 
-    r: float = 8.0,
-    n_neighbors: int = 250,
-    edge_dim: int = 50,
-    edge_calc_method: str = "mdl",
+    config,
+    y = None,
 ):
+    num_offsets = config['preprocess_params']['num_offsets']
+    device = 'cuda' #config['dataset_device']
+    r = config['preprocess_params']['cutoff_radius']
+    n_neighbors = config['preprocess_params']['n_neighbors']
+    edge_dim = config['preprocess_params']['edge_dim']
+    
     # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
     data = Data()
     adaptor = AseAtomsAdaptor()
-    n_atoms = len(structure)
     ase_crystal = adaptor.get_atoms(structure)
     data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
                 device = device, dtype = torch.float)
@@ -31,7 +32,7 @@ def prepare_data(
     data.u = torch.Tensor(np.zeros((3))[np.newaxis, ...])         
     
     edge_gen_out = calculate_edges_master(
-        edge_calc_method,
+        config['preprocess_params']['edge_calc_method'],
         r,
         n_neighbors,
         num_offsets,
@@ -59,5 +60,8 @@ def prepare_data(
 
     delattr(data, "edge_descriptor")
     data.x = data.x.float()
+
+    if y is not None:
+        data.y = torch.tensor(np.array([y]))
 
     return data
