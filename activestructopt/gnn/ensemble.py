@@ -48,10 +48,13 @@ class Ensemble:
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
 
-  def predict(self, structure):
+  def predict(self, structure, prepared = False):
     ensemble_results = []
-    data = activestructopt.gnn.dataloader.prepare_data(
-      structure, self.config['dataset'])
+    if not prepared:
+      data = activestructopt.gnn.dataloader.prepare_data(
+        structure, self.config['dataset'])
+    else:
+      data = structure
     for i in range(self.k):
       ensemble_results.append(
         self.ensemble[i].trainer.model._forward(
@@ -59,9 +62,9 @@ class Ensemble:
     return np.mean(np.array(ensemble_results), 0), np.std(
       np.array(ensemble_results), 0) * self.scalar
 
-  def set_scalar_calibration(self, test_structures, test_targets):
+  def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
-    test_res = [self.predict(s) for s in test_structures]
+    test_res = [self.predict(s, prepared = True) for s in test_data]
     zscores = []
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
