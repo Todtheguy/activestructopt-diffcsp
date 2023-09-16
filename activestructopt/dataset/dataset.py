@@ -20,7 +20,7 @@ def make_data_splits(initial_structure, optfunc, args,
   for i in range(k):
     datasets[i][0].collate([prepare_data(
       structures[x], y = ys[x]) for x in np.concatenate(
-      [kfolds[j] for j in range(k) if j != x])])
+      [kfolds[j] for j in range(k) if j != i])])
     datasets[i][1].collate([prepare_data(
       structures[x], y = ys[x]) for x in kfolds[i]])
   
