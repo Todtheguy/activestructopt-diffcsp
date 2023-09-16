@@ -16,11 +16,11 @@ def prepare_data(
     n_neighbors: int = 250,
     edge_dim: int = 50,
     edge_calc_method: str = "mdl",
+    y = None,
 ):
     # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
     data = Data()
     adaptor = AseAtomsAdaptor()
-    n_atoms = len(structure)
     ase_crystal = adaptor.get_atoms(structure)
     data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
                 device = device, dtype = torch.float)
@@ -59,5 +59,8 @@ def prepare_data(
 
     delattr(data, "edge_descriptor")
     data.x = data.x.float()
+
+    if y is not None:
+        data.y = torch.tensor(y.tolist())
 
     return data

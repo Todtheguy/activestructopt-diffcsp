@@ -11,7 +11,7 @@ class Runner:
     self.config = None
 
   def __call__(self, config, args):
-    with new_trainer_context(args=args, config=config) as ctx:
+    with new_trainer_context(args = args, config = config) as ctx:
         self.config = ctx.config
         self.task = ctx.task
         self.trainer = ctx.trainer
@@ -30,23 +30,22 @@ class ConfigSetup:
       self.submit = None
 
 class Ensemble:
-  def __init__(self, k, config, datafolder):
+  def __init__(self, k, config, datasets):
     self.k = k
     self.config = config
-    self.datafolder = datafolder
+    self.datasets = datasets
     self.ensemble = [Runner() for _ in range(k)]
     self.scalar = 1.0
   
   def train(self):
     for i in range(self.k):
-      #self.config["dataset"]["src"]["train"] = self.datafolder + (
-      #  "/train_k" + str(i) + ".json")
-      #self.config["dataset"]["src"]["val"] = self.datafolder + (
-      #  "/val_k" + str(i) + ".json")
-      #self.config["dataset"]["src"]["test"] = self.datafolder + (
-      #  "/test_data.json")
       process_data(self.config["dataset"])
-      self.ensemble[i](self.config, ConfigSetup('train'))
+      self.ensemble[i](self.config, ConfigSetup('train'), {
+        'datasets': {
+          'train': self.datasets[i][0], 
+          'val': self.datasets[i][1]
+        }
+      })
       self.ensemble[i].trainer.model.eval()
 
   def predict(self, structure):
