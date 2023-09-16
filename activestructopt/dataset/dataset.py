@@ -16,12 +16,10 @@ def make_data_splits(initial_structure, optfunc, args,
   test_indices = structure_indices[int(np.floor(split * N)):]
   test_targets = [ys[i] for i in test_indices]
   
-  datasets = [(InMemoryDataset(), InMemoryDataset()) for _ in range(k)]
-  for i in range(k):
-    datasets[i][0].collate([prepare_data(
+  datasets = [([prepare_data(
       structures[x], y = ys[x]) for x in np.concatenate(
-      [kfolds[j] for j in range(k) if j != i])])
-    datasets[i][1].collate([prepare_data(
-      structures[x], y = ys[x]) for x in kfolds[i]])
+      [kfolds[j] for j in range(k) if j != i])], 
+      [prepare_data(
+      structures[x], y = ys[x]) for x in kfolds[i]]) for i in range(k)]
   
   return structures, datasets, kfolds, test_indices, test_targets
