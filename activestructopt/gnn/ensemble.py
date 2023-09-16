@@ -24,10 +24,14 @@ class Runner:
     self.config["timestamp_id"] = self.trainer.timestamp_id
 
 class ConfigSetup:
-  def __init__(self, run_mode):
+  def __init__(self, run_mode, train_data, val_data):
       self.run_mode = run_mode
       self.seed = None
       self.submit = None
+      self.datasets = {
+        'train': train_data, 
+        'val': val_data, 
+      }
 
 class Ensemble:
   def __init__(self, k, config, datasets):
@@ -40,12 +44,8 @@ class Ensemble:
   def train(self):
     for i in range(self.k):
       process_data(self.config["dataset"])
-      self.ensemble[i](self.config, ConfigSetup('train'), {
-        'datasets': {
-          'train': self.datasets[i][0], 
-          'val': self.datasets[i][1]
-        }
-      })
+      self.ensemble[i](self.config, 
+        ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
 
   def predict(self, structure):
