@@ -61,6 +61,6 @@ def prepare_data(
     data.x = data.x.float()
 
     if y is not None:
-        data.y = torch.tensor([y])
+        data.y = torch.tensor(np.array([y]))
 
     return data
