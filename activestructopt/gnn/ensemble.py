@@ -51,7 +51,7 @@ class Ensemble:
   def predict(self, structure):
     ensemble_results = []
     data = activestructopt.gnn.dataloader.prepare_data(
-      structure, device = 'cuda')
+      structure, self.config['dataset'])
     for i in range(self.k):
       ensemble_results.append(
         self.ensemble[i].trainer.model._forward(
