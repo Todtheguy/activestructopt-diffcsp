@@ -109,7 +109,8 @@ def rmc_ucb(optfunc, args, exp, σ, structure, N, σr = 0.5, λ = 1.0):
     accepts = []
     uncertainties = []
     old_structure = structure
-    old_𝛘2 = 0
+    res, resσ = optfunc(old_structure, **(args))
+    old_𝛘2 = 𝛘2_ucb(exp, res, resσ, σ, λ)
 
     for _ in range(N):
         new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
