@@ -72,7 +72,6 @@ def 𝛘2_ei(exp, th, thσ, σ, y):
         (exp - th) ** 2))) / (len(exp) * σ ** 2)
     return -ei(y, yhat, s)
 
-
 def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
     structures = []
     𝛘2s = []
@@ -85,6 +84,37 @@ def rmc_ei(optfunc, args, exp, σ, structure, best, N, σr = 0.5):
         new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
         res, resσ = optfunc(new_structure, **(args))
         new_𝛘2 = 𝛘2_ei(exp, res, resσ, σ, best)
+        Δχ2 = new_𝛘2 - old_𝛘2
+        accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
+        structures.append(new_structure)
+        𝛘2s.append(new_𝛘2)
+        accepts.append(accept)
+        uncertainties.append(np.mean(resσ))
+        if accept:
+            old_structure = copy.deepcopy(new_structure)
+            old_𝛘2 = new_𝛘2
+
+    return structures, 𝛘2s, accepts, uncertainties
+
+def 𝛘2_ucb(exp, th, thσ, σ, λ):
+    # TODO: Verify that a normal approximation is appropriate here
+    yhat = np.sum((thσ ** 2) + ((exp - th) ** 2)) / (len(exp) * σ ** 2)
+    s = np.sqrt(2 * np.sum((thσ ** 4) + 2 * (thσ ** 2) * (
+        (exp - th) ** 2))) / (len(exp) * σ ** 2)
+    return yhat - λ * s
+
+def rmc_ucb(optfunc, args, exp, σ, structure, N, σr = 0.5, λ = 1.0):
+    structures = []
+    𝛘2s = []
+    accepts = []
+    uncertainties = []
+    old_structure = structure
+    old_𝛘2 = 0
+
+    for _ in range(N):
+        new_structure = step(old_structure, 0.0, σr, 0.0, 0.0)
+        res, resσ = optfunc(new_structure, **(args))
+        new_𝛘2 = 𝛘2_ucb(exp, res, resσ, σ, λ)
         Δχ2 = new_𝛘2 - old_𝛘2
         accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
         structures.append(new_structure)
