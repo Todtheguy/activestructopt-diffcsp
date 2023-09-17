@@ -22,14 +22,11 @@ def make_data_splits(initial_structure, optfunc, args, config,
   datasets = [([data[j] for j in train_indices[i]], 
       [data[j] for j in kfolds[i]]) for i in range(k)]
   
-  return structures, datasets, kfolds, test_indices, test_data, test_targets
+  return structures, ys, datasets, kfolds, test_indices, test_data, test_targets
 
 def update_datasets(datasets, new_structure, config, optfunc, args):
-  new_data = prepare_data(
-    new_structure, 
-    config, 
-    y = optfunc(new_structure, **(args))
-  )
+  y = optfunc(new_structure, **(args))
+  new_data = prepare_data(new_structure, config, y = y)
   fold = len(datasets) - 1
   for i in range(len(datasets) - 1):
     if len(datasets[i][1]) < len(datasets[i + 1][1]):
@@ -39,4 +36,4 @@ def update_datasets(datasets, new_structure, config, optfunc, args):
   for i in range(len(datasets)):
     if fold != i:
       datasets[i][0].append(new_data)
-  return datasets
+  return datasets, y
