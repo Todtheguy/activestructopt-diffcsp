@@ -23,3 +23,20 @@ def make_data_splits(initial_structure, optfunc, args, config,
       [data[j] for j in kfolds[i]]) for i in range(k)]
   
   return structures, datasets, kfolds, test_indices, test_data, test_targets
+
+def update_datasets(datasets, new_structure, config, optfunc, args):
+  new_data = prepare_data(
+    new_structure, 
+    config, 
+    y = optfunc(new_structure, **(args))
+  )
+  fold = len(datasets) - 1
+  for i in range(len(datasets) - 1):
+    if len(datasets[i][1]) < len(datasets[i + 1][1]):
+      fold = i
+      break
+  datasets[fold][1].append(new_data)
+  for i in range(len(datasets)):
+    if fold != i:
+      datasets[i][0].append(new_data)
+  return datasets

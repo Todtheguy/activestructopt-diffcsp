@@ -106,8 +106,6 @@ def 𝛘2_ucb(exp, th, thσ, σ, λ):
 def rmc_ucb(optfunc, args, exp, σ, structure, N, σr = 0.5, λ = 1.0):
     structures = []
     𝛘2s = []
-    accepts = []
-    uncertainties = []
     old_structure = structure
     res, resσ = optfunc(old_structure, **(args))
     old_𝛘2 = 𝛘2_ucb(exp, res, resσ, σ, λ)
@@ -120,10 +118,8 @@ def rmc_ucb(optfunc, args, exp, σ, structure, N, σr = 0.5, λ = 1.0):
         accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
         structures.append(new_structure)
         𝛘2s.append(new_𝛘2)
-        accepts.append(accept)
-        uncertainties.append(np.mean(resσ))
         if accept:
             old_structure = copy.deepcopy(new_structure)
             old_𝛘2 = new_𝛘2
 
-    return structures, 𝛘2s, accepts, uncertainties
+    return structures[np.argmin(𝛘2s)]
