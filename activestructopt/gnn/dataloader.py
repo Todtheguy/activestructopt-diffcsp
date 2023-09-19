@@ -14,7 +14,7 @@ def prepare_data(
     y = None,
 ):
     num_offsets = config['preprocess_params']['num_offsets']
-    device = 'cuda' #config['dataset_device']
+    device = config['dataset_device']
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
     edge_dim = config['preprocess_params']['edge_dim']
