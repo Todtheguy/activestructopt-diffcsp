@@ -51,8 +51,11 @@ class Ensemble:
   def predict(self, structure, prepared = False):
     ensemble_results = []
     if not prepared:
+      device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
+        ))).get_device()
+      device = 'cpu' if device == -1 else 'cuda:' + str(device)
       data = activestructopt.gnn.dataloader.prepare_data(
-        structure, self.config['dataset'])
+        structure, self.config['dataset']).to(device)
     else:
       data = structure
     for i in range(self.k):
