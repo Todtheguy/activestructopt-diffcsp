@@ -24,9 +24,9 @@ def make_data_splits(initial_structure, optfunc, args, config,
   
   return structures, ys, datasets, kfolds, test_indices, test_data, test_targets
 
-def update_datasets(datasets, new_structure, config, optfunc, args):
+def update_datasets(datasets, new_structure, config, optfunc, args, device):
   y = optfunc(new_structure, **(args))
-  new_data = prepare_data(new_structure, config, y = y)
+  new_data = prepare_data(new_structure, config, y = y).to(device)
   fold = len(datasets) - 1
   for i in range(len(datasets) - 1):
     if len(datasets[i][1]) < len(datasets[i + 1][1]):
