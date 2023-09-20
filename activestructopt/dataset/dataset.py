@@ -5,15 +5,16 @@ def make_data_splits(initial_structure, optfunc, args, config,
                       perturbrmin = 0.1, perturbrmax = 1.0, 
                       N = 100, split = 0.85, k = 5):
   structures = [initial_structure.copy() for _ in range(N)]
-  for i in range(N):
+  for i in range(1, N):
     structures[i].perturb(np.random.uniform(perturbrmin, perturbrmax))
   ys = [optfunc(structures[i], **(args)) for i in range(N)]
   data = [prepare_data(structures[i], config, y = ys[i]) for i in range(N)]
 
-  structure_indices = np.random.permutation(np.arange(N))
-  trainval_indices = structure_indices[:int(np.floor(split * N))]
+  structure_indices = np.random.permutation(np.arange(1, N))
+  trainval_indices = structure_indices[:int(np.floor(split * N) - 1)]
+  trainval_indices.append(0)
   kfolds = np.array_split(trainval_indices, k)
-  test_indices = structure_indices[int(np.floor(split * N)):]
+  test_indices = structure_indices[int(np.floor(split * N) - 1):]
   test_data = [data[i] for i in test_indices]
   test_targets = [ys[i] for i in test_indices]
   train_indices = [np.concatenate(
