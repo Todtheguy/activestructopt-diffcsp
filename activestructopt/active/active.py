@@ -34,7 +34,7 @@ def active_learning(
     split = split,
     device = device,
   )
-  mses = [np.mean((y - target_rdfs[0]) ** 2) for y in ys]
+  mses = [np.mean((y - target) ** 2) for y in ys]
   if print_mses:
     print(mses)
   for i in range(max_forward_calls - N):
