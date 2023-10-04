@@ -73,7 +73,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             f = lambda x: np.abs(expectation_target - np.sum(np.exp(-increases/(2 * x[0] ** 2))) / 10)
             σ = minimize(f, [σ]).x[0]
 
-    return structures, mses, accepts
+    return structures, mses, accepts, σs
 
 def 𝛘2_ucb(exp, th, thσ, σ, λ):
     # noncentral chi squared distributions for each dimension
