@@ -63,7 +63,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             old_mse = new_mse
         # update σ to achieve 50% acceptance when possible
         if i % 10 == 0:
-            recent_Δmses = Δmses[-10:]
+            recent_Δmses = np.array(Δmses[-10:])
             increases = recent_Δmses[recent_Δmses > 0]
             if len(increases) <= 5:
                 continue
