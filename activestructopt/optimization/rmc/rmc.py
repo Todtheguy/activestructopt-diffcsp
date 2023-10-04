@@ -64,7 +64,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             old_structure = copy.deepcopy(new_structure)
             old_mse = new_mse
         # update σ to achieve 50% acceptance when possible
-        if i % σ_update_steps == 0 and i >= σ_update_steps:
+        if i >= σ_update_steps:
             recent_Δmses = np.array(Δmses[-σ_update_steps:])
             increases = recent_Δmses[recent_Δmses > 0]
             expectation_target = accept_target - ((σ_update_steps - len(increases)) / σ_update_steps)
