@@ -60,7 +60,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
         accepts.append(accept)
         if accept:
             old_structure = copy.deepcopy(new_structure)
-            old_𝛘2 = new_𝛘2
+            old_mse = new_mse
         # update σ to achieve 50% acceptance when possible
         if i % 10 == 0:
             recent_Δmses = Δmses[-10:]
