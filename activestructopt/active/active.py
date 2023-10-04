@@ -37,12 +37,13 @@ def active_learning(
   mses = [np.mean((y - target) ** 2) for y in ys]
   if print_mses:
     print(mses)
-  for i in range(max_forward_calls - N):
+  active_steps = max_forward_calls - N
+  for i in range(active_steps):
     starting_structure = structures[np.argmin(mses)].copy()
     ensemble = Ensemble(k, config, datasets)
     ensemble.train()
     ensemble.set_scalar_calibration(test_data, test_targets)
-    new_structure = (rmc_exploit if i == max_forward_calls - N - 1 else rmc_ucb)(
+    new_structure = (rmc_exploit if i == (active_steps - 1) else rmc_ucb)(
       ensemble.predict,
       {},
       target,
