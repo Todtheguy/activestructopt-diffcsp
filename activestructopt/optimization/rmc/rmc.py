@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import math
+from scipy.optimize import minimize
 
 def step(structure, latticeprob, σr, σl, σθ):
     new_struct = copy.deepcopy(structure)
@@ -29,6 +30,9 @@ def positions_step(structure, σr):
     structure.sites[atom_i].c = (structure.sites[atom_i].c + 
         σr * np.random.rand() / structure.lattice.c) % 1
 
+def mse(exp, th):
+    return np.mean((exp - th) ** 2)
+
 def 𝛘2(exp, th, σ):
     return np.mean((exp - th) ** 2) / (σ ** 2)
 
@@ -38,27 +42,36 @@ def reject(structure):
 
 def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl = 0.1, σθ = 1.0):
     structures = []
-    𝛘2s = []
     accepts = []
-    uncertainties = []
     old_structure = structure
-    old_𝛘2 = 𝛘2(exp, optfunc(old_structure, **(args)), σ)
+    old_mse = mse(exp, optfunc(old_structure, **(args)))
+    mses = [old_mse]
+    Δmses = [-1.]
 
-    for _ in range(N):
+    for i in range(N):
         new_structure = step(old_structure, latticeprob, σr, σl, σθ)
-        res, resσ = optfunc(new_structure, **(args))
-        new_𝛘2 = 𝛘2(exp, res, σ)
-        Δχ2 = new_𝛘2 - old_𝛘2
-        accept = np.random.rand() < np.exp(-Δχ2/2) and not reject(new_structure)
+        res = optfunc(new_structure, **(args))
+        new_mse = mse(exp, res)
+        Δmse = new_mse - old_mse
+        accept = (Δmse <= 0 else np.random.rand() < np.exp(-Δmse/(2 * σ ** 2))) and not reject(new_structure)
         structures.append(new_structure)
-        𝛘2s.append(new_𝛘2)
+        mses.append(mses)
+        Δmses.append(Δmse)
         accepts.append(accept)
-        uncertainties.append(np.mean(resσ))
         if accept:
             old_structure = copy.deepcopy(new_structure)
             old_𝛘2 = new_𝛘2
+        # update σ to achieve 50% acceptance when possible
+        if i % 10 == 0:
+            recent_Δmses = Δmses[-10:]
+            increases = recent_Δmses[recent_Δmses > 0]
+            if len(increases) <= 5:
+                continue
+            expectation_target = 0.5 - ((10 - len(increases)) / 10)
+            f = lambda x: expectation_target = np.sum(np.exp(-increases/(2 * x[0] ** 2))) / 10
+            σ = minimize(f, [σ]).x[0]
 
-    return structures, 𝛘2s, accepts, uncertainties
+    return structures, mses, accepts
 
 def 𝛘2_ucb(exp, th, thσ, σ, λ):
     # noncentral chi squared distributions for each dimension
