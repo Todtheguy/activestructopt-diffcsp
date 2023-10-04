@@ -87,7 +87,7 @@ def rmc_ucb(optfunc, args, exp, σ, structure, N, σr = 0.1, λ = 1.0):
 
     return structures[np.argmin(𝛘2s)]
 
-def rmc_exploit(optfunc, args, exp, σ, structure, N, σr = 0.1):
+def rmc_exploit(optfunc, args, exp, σ, structure, N, σr = 0.1, λ = 1.0):
     structures = []
     𝛘2s = []
     old_structure = structure

@@ -1,4 +1,4 @@
-from activestructopt.optimization.rmc.rmc import rmc_ucb
+from activestructopt.optimization.rmc.rmc import rmc_ucb, rmc_exploit
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
@@ -42,7 +42,7 @@ def active_learning(
     ensemble = Ensemble(k, config, datasets)
     ensemble.train()
     ensemble.set_scalar_calibration(test_data, test_targets)
-    new_structure = rmc_ucb(
+    new_structure = (rmc_exploit if i == max_forward_calls - N - 1 else rmc_ucb)(
       ensemble.predict,
       {},
       target,
