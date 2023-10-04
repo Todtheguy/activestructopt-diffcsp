@@ -47,6 +47,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
     old_mse = mse(exp, optfunc(old_structure, **(args)))
     mses = [old_mse]
     Δmses = [-1.]
+    σs = [σ]
 
     for i in range(N):
         new_structure = step(old_structure, latticeprob, σr, σl, σθ)
@@ -55,6 +56,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
         Δmse = new_mse - old_mse
         accept = (Δmse <= 0 or np.random.rand() < np.exp(-Δmse/(2 * σ ** 2))) and not reject(new_structure)
         structures.append(new_structure)
+        σs.append(σ)
         mses.append(new_mse)
         Δmses.append(Δmse)
         accepts.append(accept)
