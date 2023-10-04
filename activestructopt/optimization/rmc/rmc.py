@@ -40,7 +40,7 @@ def reject(structure):
     dists = structure.distance_matrix.flatten()
     return np.min(dists[dists > 0]) < 1
 
-def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl = 0.1, σθ = 1.0):
+def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl = 0.1, σθ = 1.0, σ_update_steps = 100):
     structures = [structure]
     accepts = [True]
     old_structure = structure
@@ -64,13 +64,13 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             old_structure = copy.deepcopy(new_structure)
             old_mse = new_mse
         # update σ to achieve 50% acceptance when possible
-        if i % 10 == 0:
-            recent_Δmses = np.array(Δmses[-10:])
+        if i % σ_update_steps == 0 and i >= σ_update_steps:
+            recent_Δmses = np.array(Δmses[-σ_update_steps:])
             increases = recent_Δmses[recent_Δmses > 0]
-            if len(increases) <= 5:
+            if len(increases) <= σ_update_steps / 2:
                 continue
-            expectation_target = 0.5 - ((10 - len(increases)) / 10)
-            f = lambda x: np.abs(expectation_target - np.sum(np.exp(-increases/(2 * x[0] ** 2))) / 10)
+            expectation_target = 0.5 - ((σ_update_steps - len(increases)) / σ_update_steps)
+            f = lambda x: np.abs(expectation_target - np.sum(np.exp(-increases/(2 * x[0] ** 2))) / σ_update_steps)
             σ = minimize(f, [σ]).x[0]
 
     return structures, mses, accepts, σs
