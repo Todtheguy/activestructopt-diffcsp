@@ -41,8 +41,8 @@ def reject(structure):
     return np.min(dists[dists > 0]) < 1
 
 def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl = 0.1, σθ = 1.0):
-    structures = []
-    accepts = []
+    structures = [structure]
+    accepts = [True]
     old_structure = structure
     old_mse = mse(exp, optfunc(old_structure, **(args)))
     mses = [old_mse]
