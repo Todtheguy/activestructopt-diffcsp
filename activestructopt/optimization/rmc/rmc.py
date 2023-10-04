@@ -68,7 +68,7 @@ def rmc(optfunc, args, exp, σ, structure, N, latticeprob = 0.1, σr = 0.5, σl 
             if len(increases) <= 5:
                 continue
             expectation_target = 0.5 - ((10 - len(increases)) / 10)
-            f = lambda x: expectation_target = np.sum(np.exp(-increases/(2 * x[0] ** 2))) / 10
+            f = lambda x: np.abs(expectation_target - np.sum(np.exp(-increases/(2 * x[0] ** 2))) / 10)
             σ = minimize(f, [σ]).x[0]
 
     return structures, mses, accepts
