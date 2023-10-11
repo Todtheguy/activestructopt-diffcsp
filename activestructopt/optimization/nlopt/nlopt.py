@@ -1,10 +1,15 @@
 # https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/
 
 import nlopt
-from numpy import *
 import numpy as np
 
-def run_nlopt(optfunc, args, exp, structure, N):
+gn_algs = [nlopt.GN_AGS, nlopt.GN_CRS2_LM, nlopt.GN_ESCH, nlopt.GN_ISRES,
+    nlopt.GN_MLSL, nlopt.GN_MLSL_LDS, nlopt.GN_DIRECT, nlopt.GN_DIRECT_L,
+    nlopt.GN_DIRECT_L_RAND, nlopt.GN_ORIG_DIRECT, nlopt.GN_ORIG_DIRECT_L,
+    nlopt.GN_DIRECT_L_NOSCAL, nlopt.GN_DIRECT_L_RAND_NOSCAL,
+    nlopt.GN_ORIG_DIRECT_L_NOSCAL, nlopt.GD_STOGO_RAND]
+
+def run_nlopt(optfunc, args, exp, structure, N, algorithm = nlopt.GN_ISRES):
     natoms = len(structure)
     structures = []
 
@@ -26,7 +31,7 @@ def run_nlopt(optfunc, args, exp, structure, N):
         structures.append(structure.copy())
         return np.mean((exp - optfunc(structure, **(args))) ** 2)
 
-    opt = nlopt.opt(nlopt.GN_ISRES, 3 * natoms)
+    opt = nlopt.opt(algorithm, 3 * natoms)
     opt.set_min_objective(f)
     opt.set_lower_bounds(np.zeros(3 * natoms))
     opt.set_upper_bounds(np.ones(3 * natoms))
