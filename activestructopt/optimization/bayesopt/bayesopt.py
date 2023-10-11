@@ -1,4 +1,5 @@
 from bayes_opt import BayesianOptimization
+import numpy as np
 
 def bayesian_optimization(optfunc, args, exp, starting_structure, N):
   def construct_structure(**kwargs):
