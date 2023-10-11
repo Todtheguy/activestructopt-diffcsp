@@ -1,7 +1,5 @@
 from bayes_opt import BayesianOptimization
 import numpy as np
-from contextlib import redirect_stdout
-from os import devnull
 
 def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 10):
   def construct_structure(**kwargs):
@@ -26,11 +24,10 @@ def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 1
       f = msefunc,
       pbounds = pbounds,
       random_state = 1,
+      verbose = 0,
   )
 
-  # https://stackoverflow.com/questions/2125702/how-to-suppress-console-output-in-python
-  with redirect_stdout(devnull):
-    optimizer.maximize(init_points = nrandom, n_iter = N - nrandom)
+  optimizer.maximize(init_points = nrandom, n_iter = N - nrandom)
 
   structures = [construct_structure(**iter['params']) for iter in optimizer.res]
   mses = [-iter['target'] for iter in optimizer.res]
