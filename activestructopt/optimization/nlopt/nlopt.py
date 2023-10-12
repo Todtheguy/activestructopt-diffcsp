@@ -4,12 +4,11 @@ import nlopt
 import numpy as np
 
 gn_algs = [nlopt.GN_CRS2_LM, nlopt.GN_ESCH, nlopt.GN_ISRES, nlopt.GN_DIRECT, 
-  nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_ORIG_DIRECT, 
-  nlopt.GN_ORIG_DIRECT_L, nlopt.GN_DIRECT_L_NOSCAL, 
+  nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT_L_NOSCAL, 
   nlopt.GN_DIRECT_L_RAND_NOSCAL, nlopt.GN_DIRECT_NOSCAL]
 
 gn_alg_labels = ['CRS2 LM', 'ESCH', 'ISRES', 'DIRECT', 'DIRECT L', 
-  'DIRECT L RAND', 'ORIG DIRECT', 'ORIG DIRECT L', 'DIRECT L NOSCAL', 
+  'DIRECT L RAND', 'DIRECT L NOSCAL', 
   'DIRECT L RAND NOSCAL', 'DIRECT NOSCAL']
 
 def run_nlopt(optfunc, args, exp, structure, N, algorithm = nlopt.GN_ISRES):
