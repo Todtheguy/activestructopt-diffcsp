@@ -23,6 +23,7 @@ def prepare_data(
     data = Data()
     adaptor = AseAtomsAdaptor()
     ase_crystal = adaptor.get_atoms(structure)
+    data.n_atoms = len(structure)
     data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
                 device = device, dtype = torch.float)
     data.cell = torch.tensor([ase_crystal.get_cell().tolist()], 
