@@ -8,6 +8,10 @@ from matdeeplearn.preprocessor.helpers import (
     calculate_edges_master,
 )
 
+class ActiveData(Data):
+  def __len__(self) -> int:
+    return 1
+
 def prepare_data(
     structure, 
     config,
@@ -20,11 +24,11 @@ def prepare_data(
     edge_dim = config['preprocess_params']['edge_dim']
     
     # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
-    data = Data()
+    data = ActiveData()
     adaptor = AseAtomsAdaptor()
     ase_crystal = adaptor.get_atoms(structure)
-    data.batch = torch.zeros(len(structure), dtype = torch.long)
-    data.n_atoms = len(structure)
+    data.batch = torch.zeros(len(structure), device = device, dtype = torch.long)
+    data.n_atoms = torch.tensor([len(structure)], device = device, dtype = torch.long)
     data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
                 device = device, dtype = torch.float)
     data.cell = torch.tensor([ase_crystal.get_cell().tolist()], 
