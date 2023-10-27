@@ -39,7 +39,7 @@ def quantile_newton(λ, std, p, eps = 1e-5):
   for i in range(10):
     x = x + (p - ncx2_cdf(x, λ + eps)) / ncx2_pdf(x, λ + eps, dx = 1e-6)
   λ.retain_grad()
-  return torch.mean(x / (std ** 2))
+  return torch.mean(x * (std ** 2))
 
 def ucb_loss(ensemble, data, target, p = 0.26, device = 'cpu'):
   prediction = ensemble.ensemble[0].trainer.model._forward(data)
