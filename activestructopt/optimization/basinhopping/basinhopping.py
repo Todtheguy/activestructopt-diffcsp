@@ -1,7 +1,6 @@
 import torch
 import math
 from scipy.optimize import basinhopping
-from scipy._lib._util import check_random_state
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
 
@@ -95,13 +94,10 @@ def basinhop(ensemble, starting_structure, target,
   class RandomDisplacementWithRejection:
     def __init__(self, stepsize=0.5, random_gen=None):
       self.stepsize = stepsize
-      self.random_gen = check_random_state(random_gen)
     
     def __call__(self, x):
       while True:
-        y = x + self.random_gen.uniform(-self.stepsize, 
-                                        self.stepsize,
-                                        np.shape(x))
+        y = x + (2 * np.random.rand(len(x)) - 1)
         if constraint_fun(y) >= 0:
           return y
   ret = basinhopping(func, x0, minimizer_kwargs = {"method": method, 
