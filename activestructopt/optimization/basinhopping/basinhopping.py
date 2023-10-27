@@ -103,7 +103,7 @@ def basinhop(ensemble, starting_structure, target,
   ret = basinhopping(func, x0, minimizer_kwargs = {"method": method, 
     "jac": True, "options": {"maxiter": iters_per_start}, 
     "constraints": constraints}, niter = starts, 
-    take_step = RandomDisplacementWithRejection)
+    take_step = RandomDisplacementWithRejection())
   new_structure = starting_structure.copy()
   for i in range(len(new_structure)):
     new_structure[i].coords = ret.x[(3 * i):(3 * (i + 1))]
