@@ -83,13 +83,13 @@ def basinhop(ensemble, starting_structure, target,
     f, df = loss_fn(ensemble, 
         generate_data(new_structure, device, ensemble), target, device = device)
     return f, df.tolist()
-  constraints = []
-  for i in range(len(starting_structure) - 1):
-    for j in range(i + 1, len(starting_structure)):
-      constraints.append({"type": "ineq", 
-        "fun": lambda x: np.sqrt(np.sum((np.array(
-            x[(3 * i):(3 * (i + 1))]) - np.array(
-            x[(3 * j):(3 * (j + 1))])) ** 2)) - 1})
+  def constraint_fun(x):
+    new_structure = starting_structure.copy()
+    for i in range(len(new_structure)):
+        new_structure[i].coords = x[(3 * i):(3 * (i + 1))]
+    dists = new_structure.distance_matrix.flatten()
+    return np.min(dists[dists > 0]) - 1
+  constraints = [{"type": "ineq", "fun": constraint_fun}]
   ret = basinhopping(func, x0, minimizer_kwargs = {"method": method, 
     "jac": True, "options": {"maxiter": iters_per_start}, 
     "constraints": constraints}, niter = starts)
