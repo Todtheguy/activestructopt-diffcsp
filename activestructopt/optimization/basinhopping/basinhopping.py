@@ -1,6 +1,7 @@
 import torch
 import math
 from scipy.optimize import basinhopping
+from scipy._lib._util import check_random_state
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
 
