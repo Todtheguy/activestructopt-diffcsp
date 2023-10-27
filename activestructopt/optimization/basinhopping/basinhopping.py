@@ -90,9 +90,23 @@ def basinhop(ensemble, starting_structure, target,
     dists = new_structure.distance_matrix.flatten()
     return np.min(dists[dists > 0]) - 1
   constraints = [{"type": "ineq", "fun": constraint_fun}]
+  # Based on https://github.com/scipy/scipy/blob/v1.11.3/scipy/optimize/_basinhopping.py#L259C1-L287C17
+  class RandomDisplacementWithRejection:
+    def __init__(self, stepsize=0.5, random_gen=None):
+      self.stepsize = stepsize
+      self.random_gen = check_random_state(random_gen)
+    
+    def __call__(self, x):
+      while True:
+        y = x + self.random_gen.uniform(-self.stepsize, 
+                                        self.stepsize,
+                                        np.shape(x))
+        if constraint_fun(y) >= 0:
+          return y
   ret = basinhopping(func, x0, minimizer_kwargs = {"method": method, 
     "jac": True, "options": {"maxiter": iters_per_start}, 
-    "constraints": constraints}, niter = starts)
+    "constraints": constraints}, niter = starts, 
+    take_step = RandomDisplacementWithRejection)
   new_structure = starting_structure.copy()
   for i in range(len(new_structure)):
     new_structure[i].coords = ret.x[(3 * i):(3 * (i + 1))]
