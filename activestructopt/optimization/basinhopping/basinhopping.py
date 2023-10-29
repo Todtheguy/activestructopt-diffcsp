@@ -76,6 +76,22 @@ def old_ucb_loss(ensemble, data, target, λ = 1.0, device = 'cpu'):
   f = ucb.detach().cpu().item()
   return f, df
 
+def old_mse_loss(ensemble, data, target, λ = 1.0, device = 'cpu'):
+  prediction = ensemble.ensemble[0].trainer.model._forward(data)
+  target = torch.tensor(target, device = device)
+  for i in range(1, ensemble.k):
+    prediction = torch.cat((prediction,
+               ensemble.ensemble[i].trainer.model._forward(data)), dim = 0)
+  mean = torch.mean(prediction, dim = 0)
+  std = ensemble.scalar * torch.std(prediction, dim = 0)
+
+  ucb = torch.mean((std ** 2) + ((target - mean) ** 2))
+  data.pos.retain_grad()
+  ucb.backward(retain_graph=True)
+  df = data.pos.grad.detach().cpu().numpy().flatten()
+  f = ucb.detach().cpu().item()
+  return f, df
+
 def mse_loss(ensemble, data, target, p = 0.26, device = 'cpu'):
   prediction = ensemble.ensemble[0].trainer.model._forward(data)
   target = torch.tensor(target, device = device)

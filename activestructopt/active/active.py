@@ -1,4 +1,4 @@
-from activestructopt.optimization.basinhopping.basinhopping import basinhop, ucb_loss, mse_loss, old_ucb_loss
+from activestructopt.optimization.basinhopping.basinhopping import basinhop, old_ucb_loss, old_mse_loss
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
@@ -44,7 +44,7 @@ def active_learning(
     new_structure = basinhop(ensemble, starting_structure, target, 
       starts = bh_starts, iters_per_start = bh_iters_per_start, 
       method = "SLSQP", 
-      loss_fn = mse_loss if i == (active_steps - 1) else old_ucb_loss)
+      loss_fn = old_mse_loss if i == (active_steps - 1) else old_ucb_loss)
     structures.append(new_structure)
     datasets, y = update_datasets(
       datasets,
