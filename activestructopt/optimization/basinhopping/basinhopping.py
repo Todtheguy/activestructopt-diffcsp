@@ -4,8 +4,9 @@ from scipy.optimize import basinhopping
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
 import periodictable
+from pathlib import Path
 
-lj_rmins = np.genfromtxt("../lj_rmins.csv", delimiter=",")
+lj_rmins = np.genfromtxt(str(Path(__file__).parent / "./lj_rmins.csv"), delimiter=",")
 el_symbols = [periodictable.elements[i].symbol for i in range(95)]
 
 def get_z(site):
