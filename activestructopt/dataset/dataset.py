@@ -22,6 +22,9 @@ def make_data_splits(initial_structure, optfunc, args, config,
       new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
       got_structure = not reject(new_structure)
       structures[i] = new_structure
+
+  ys = [optfunc(structures[i], **(args)) for i in range(N)]
+  data = [prepare_data(structures[i], config, y = ys[i]).to(device) for i in range(N)]
       
   structure_indices = np.random.permutation(np.arange(1, N))
   trainval_indices = structure_indices[:int(np.floor(split * N) - 1)]
