@@ -24,8 +24,8 @@ def generate_data(structure, device, ensemble):
   return data
 
 def lj_repulsion(data, ljrmins, scale = 4000):
-  rmins = ljrmins[data.z[data.edge_index[0]] - 1][data.z[data.edge_index[1]] - 1]
-  return torch.sum(torch.pow(rmins / data.edge_weights, 12) / scale)
+  rmins = ljrmins[(data.z[data.edge_index[0]] - 1), (data.z[data.edge_index[1]] - 1)]
+  return torch.mean(torch.pow(rmins / data.edge_weight, 12)) / scale
 
 # https://en.wikipedia.org/wiki/Q-function
 def Q(x):
