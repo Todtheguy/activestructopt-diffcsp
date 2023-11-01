@@ -43,7 +43,7 @@ def active_learning(
     ensemble.set_scalar_calibration(test_data, test_targets)
     new_structure = basinhop(ensemble, starting_structure, target, 
       starts = bh_starts, iters_per_start = bh_iters_per_start, 
-      method = "SLSQP", 
+      method = "BFGS", 
       loss_fn = old_mse_loss if i == (active_steps - 1) else old_ucb_loss)
     structures.append(new_structure)
     datasets, y = update_datasets(
