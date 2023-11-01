@@ -3,6 +3,13 @@ import math
 from scipy.optimize import basinhopping
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
+import periodictable
+
+lj_rmins = np.genfromtxt("../lj_rmins.csv", delimiter=",")
+el_symbols = [periodictable.elements[i].symbol for i in range(95)]
+
+def get_z(site):
+  return np.argmax(el_symbols == site.species.elements[0].symbol)
 
 def get_device(ensemble):
   device = next(iter(ensemble.ensemble[0].trainer.model.state_dict().values(
@@ -15,6 +22,10 @@ def generate_data(structure, device, ensemble):
     structure, ensemble.config['dataset']).to(device)
   data.pos.requires_grad_()
   return data
+
+def lj_repulsion(data, ljrmins, scale = 4000):
+  rmins = ljrmins[data.z[data.edge_index[0]] - 1][data.z[data.edge_index[1]] - 1]
+  return torch.sum(torch.pow(rmins / data.edge_weights, 12) / scale)
 
 # https://en.wikipedia.org/wiki/Q-function
 def Q(x):
@@ -58,6 +69,7 @@ def ucb_loss(ensemble, data, target, p = 0.26, device = 'cpu'):
   return f, df
 
 def old_ucb_loss(ensemble, data, target, λ = 1.0, device = 'cpu'):
+  ljrmins = torch.tensor(lj_rmins, device = device)
   prediction = ensemble.ensemble[0].trainer.model._forward(data)
   target = torch.tensor(target, device = device)
   for i in range(1, ensemble.k):
@@ -69,7 +81,7 @@ def old_ucb_loss(ensemble, data, target, λ = 1.0, device = 'cpu'):
   yhat = torch.mean((std ** 2) + ((target - mean) ** 2))
   s = torch.sqrt(2 * torch.sum((std ** 4) + 2 * (std ** 2) * (
     (target - mean) ** 2))) / (len(target))
-  ucb = yhat - λ * s
+  ucb = yhat - λ * s + lj_repulsion(data, ljrmins)
   data.pos.retain_grad()
   ucb.backward(retain_graph=True)
   df = data.pos.grad.detach().cpu().numpy().flatten()
@@ -107,7 +119,7 @@ def mse_loss(ensemble, data, target, p = 0.26, device = 'cpu'):
   return f, df
 
 def basinhop(ensemble, starting_structure, target, 
-    starts = 100, iters_per_start = 100, method = "SLSQP", 
+    starts = 100, iters_per_start = 100, method = "BFGS", 
     loss_fn = ucb_loss):
   x0 = starting_structure.cart_coords.flatten()
   device = get_device(ensemble)
@@ -122,9 +134,13 @@ def basinhop(ensemble, starting_structure, target,
     new_structure = starting_structure.copy()
     for i in range(len(new_structure)):
         new_structure[i].coords = x[(3 * i):(3 * (i + 1))]
-    dists = new_structure.distance_matrix.flatten()
-    return np.min(dists[dists > 0]) - 1
-  constraints = [{"type": "ineq", "fun": constraint_fun}]
+    for i in range(len(new_structure)):
+      for j in range(i + 1, len(new_structure)):
+        if new_structure.sites[i].distance(
+            new_structure.sites[j]) < lj_rmins[get_z(
+            new_structure.sites[i])][get_z(new_structure.sites[j])]:
+          return False
+    return True
   # Based on https://github.com/scipy/scipy/blob/v1.11.3/scipy/optimize/_basinhopping.py#L259C1-L287C17
   class RandomDisplacementWithRejection:
     def __init__(self, stepsize=0.5, random_gen=None):
@@ -133,11 +149,10 @@ def basinhop(ensemble, starting_structure, target,
     def __call__(self, x):
       while True:
         y = x + (2 * np.random.rand(len(x)) - 1)
-        if constraint_fun(y) >= 0:
+        if constraint_fun(y):
           return y
   ret = basinhopping(func, x0, minimizer_kwargs = {"method": method, 
-    "jac": True, "options": {"maxiter": iters_per_start}, 
-    "constraints": constraints}, niter = starts, 
+    "jac": True, "options": {"maxiter": iters_per_start}}, niter = starts, 
     take_step = RandomDisplacementWithRejection())
   new_structure = starting_structure.copy()
   for i in range(len(new_structure)):
