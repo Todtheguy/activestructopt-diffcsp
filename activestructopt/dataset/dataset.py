@@ -1,15 +1,28 @@
 from activestructopt.gnn.dataloader import prepare_data
+from activestructopt.optimization.basinhopping.basinhopping import get_z, lj_rmins
 import numpy as np
+
+def reject(structure):
+  for i in range(len(structure)):
+    for j in range(i + 1, len(structure)):
+      if structure.sites[i].distance(
+          structure.sites[j]) < lj_rmins[get_z(
+          structure.sites[i])][get_z(structure.sites[j])]:
+        return True
+  return False
 
 def make_data_splits(initial_structure, optfunc, args, config, 
                       perturbrmin = 0.1, perturbrmax = 1.0, 
                       N = 100, split = 0.85, k = 5, device = 'cuda'):
   structures = [initial_structure.copy() for _ in range(N)]
   for i in range(1, N):
-    structures[i].perturb(np.random.uniform(perturbrmin, perturbrmax))
-  ys = [optfunc(structures[i], **(args)) for i in range(N)]
-  data = [prepare_data(structures[i], config, y = ys[i]).to(device) for i in range(N)]
-
+    got_structure = False
+    while not got_structure:
+      new_structure = initial_structure.copy()
+      new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
+      got_structure = not reject(new_structure)
+      structures[i] = new_structure
+      
   structure_indices = np.random.permutation(np.arange(1, N))
   trainval_indices = structure_indices[:int(np.floor(split * N) - 1)]
   trainval_indices = np.append(trainval_indices, [0])
