@@ -112,10 +112,6 @@ def update_data_pos(data, new_pos, config, pos_grad = True):
             data.edge_descriptor = {}
             data.edge_descriptor["distance"] = data.edge_weight
         data.distances = data.edge_weight
-
-    if config['preprocess_params']['preprocess_node_features']:
-        generate_node_features(data, n_neighbors, device=device)
-        data.x = data.x.float()
         
     if config['preprocess_params']['preprocess_edge_features']:
         generate_edge_features(data, edge_dim, r, device=device)
