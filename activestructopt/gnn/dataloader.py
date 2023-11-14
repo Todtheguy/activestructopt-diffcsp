@@ -20,9 +20,11 @@ def prepare_data(
     config,
     y = None,
     pos_grad = False,
+    device = None,
 ):
     num_offsets = config['preprocess_params']['num_offsets']
-    device = config['dataset_device']
+    if device == None:
+        device = config['dataset_device']
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
     edge_dim = config['preprocess_params']['edge_dim']
