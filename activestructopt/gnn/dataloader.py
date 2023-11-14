@@ -84,7 +84,7 @@ def prepare_data(
 
     return data
 
-def update_data_pos(data, new_pos, config, pos_grad = True):
+def update_data_pos(data, new_pos, config, pos_grad = True, device = 'cpu'):
     data.pos = new_pos
     if pos_grad:
         data.pos.requires_grad_()
