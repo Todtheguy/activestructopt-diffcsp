@@ -84,7 +84,14 @@ def prepare_data(
 
     return data
 
-def update_data_pos(data, new_pos, config, pos_grad = True, device = 'cpu'):
+def update_data_pos(data, new_pos, config, pos_grad = True, device = None):
+    num_offsets = config['preprocess_params']['num_offsets']
+    if device == None:
+        device = config['dataset_device']
+    r = config['preprocess_params']['cutoff_radius']
+    n_neighbors = config['preprocess_params']['n_neighbors']
+    edge_dim = config['preprocess_params']['edge_dim']
+    
     data.pos = new_pos
     if pos_grad:
         data.pos.requires_grad_()
