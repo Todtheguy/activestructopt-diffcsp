@@ -8,6 +8,9 @@ from matdeeplearn.preprocessor.helpers import (
     calculate_edges_master,
 )
 
+def reduced_one_hot(Z):
+  return torch.transpose(Z == torch.transpose(torch.unique(Z).repeat((Z.size()[0], 1)), 0, 1), 0, 1).float()
+
 class ActiveData(Data):
   def __len__(self) -> int:
     return 1
@@ -67,8 +70,7 @@ def prepare_data(
         data.distances = data.edge_weight
 
     if config['preprocess_params']['preprocess_node_features']:
-        generate_node_features(data, n_neighbors, device=device)
-        data.x = data.x.float()
+        generate_node_features(data, n_neighbors, device=device, node_rep_func = reduced_one_hot)
         
     if config['preprocess_params']['preprocess_edge_features']:
         generate_edge_features(data, edge_dim, r, device=device)
