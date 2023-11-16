@@ -36,7 +36,7 @@ def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
   del ucbs, xs, target, data
   return to_return
 
-def basin_adam(ensemble, starting_structure, target, config,
+def basinhop(ensemble, starting_structure, target, config,
                   nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
