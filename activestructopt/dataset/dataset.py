@@ -1,4 +1,5 @@
 from activestructopt.gnn.dataloader import prepare_data
+from activestructopt.optimization.shared.constraints import lj_reject
 import numpy as np
 
 def make_data_splits(initial_structure, optfunc, args, config, 
@@ -6,7 +7,12 @@ def make_data_splits(initial_structure, optfunc, args, config,
                       N = 100, split = 0.85, k = 5, device = 'cuda'):
   structures = [initial_structure.copy() for _ in range(N)]
   for i in range(1, N):
-    structures[i].perturb(np.random.uniform(perturbrmin, perturbrmax))
+    rejected = True
+    while rejected:
+      new_structure = initial_structure.copy()
+      new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
+      rejected = lj_reject(new_structure)
+    structures[i] = new_structure.copy()
   ys = [optfunc(structures[i], **(args)) for i in range(N)]
   data = [prepare_data(structures[i], config, y = ys[i]).to(device) for i in range(N)]
 

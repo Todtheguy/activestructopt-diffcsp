@@ -41,6 +41,7 @@ class Ensemble:
     self.datasets = datasets
     self.ensemble = [Runner() for _ in range(k)]
     self.scalar = 1.0
+    self.device = 'cpu'
   
   def train(self):
     for i in range(self.k):
@@ -49,15 +50,16 @@ class Ensemble:
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+    device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
+      ))).get_device()
+    device = 'cpu' if device == -1 else 'cuda:' + str(device)
+    self.device = device
 
   def predict(self, structure, prepared = False):
     ensemble_results = []
     if not prepared:
-      device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
-        ))).get_device()
-      device = 'cpu' if device == -1 else 'cuda:' + str(device)
       data = activestructopt.gnn.dataloader.prepare_data(
-        structure, self.config['dataset']).to(device)
+        structure, self.config['dataset']).to(self.device)
     else:
       data = structure
     for i in range(self.k):

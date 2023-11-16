@@ -1,4 +1,4 @@
-from activestructopt.optimization.basinhopping.basinhopping import basinhop, old_ucb_loss, old_mse_loss
+from activestructopt.optimization.basinhopping.basinhopping import basinhop
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
@@ -18,6 +18,9 @@ def active_learning(
     device = 'cuda',
     bh_starts = 100,
     bh_iters_per_start = 100,
+    bh_lr = 0.01,
+    bh_step_size = 0.1,
+    bh_σ = 0.0025,
     print_mses = True,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
@@ -42,9 +45,9 @@ def active_learning(
     ensemble.train()
     ensemble.set_scalar_calibration(test_data, test_targets)
     new_structure = basinhop(ensemble, starting_structure, target, 
-      starts = bh_starts, iters_per_start = bh_iters_per_start, 
-      method = "SLSQP", 
-      loss_fn = old_mse_loss if i == (active_steps - 1) else old_ucb_loss)
+      config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
+      λ = 0.0 if i == (active_steps - 1) else 1.0, lr = bh_lr, 
+      step_size = bh_step_size, rmcσ = bh_σ)
     structures.append(new_structure)
     datasets, y = update_datasets(
       datasets,
