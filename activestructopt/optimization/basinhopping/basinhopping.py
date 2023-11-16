@@ -32,7 +32,8 @@ def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
       optimizer.step()
     xs[i] = data.pos.detach().flatten()
     ucbs[i] = ucb.detach().item()
-    yhat, s, mean, std, prediction, ucb = yhat.detach(), s.detach(), mean.detach(), std.detach(), prediction.detach(), ucb.detach()
+    yhat, s, mean, std, prediction, ucb = yhat.detach(), s.detach(
+      ), mean.detach(), std.detach(), prediction.detach(), ucb.detach()
     del yhat, s, mean, std, prediction, ucb
     
   to_return = ucbs.detach().cpu().numpy(), xs.detach().cpu().numpy()
