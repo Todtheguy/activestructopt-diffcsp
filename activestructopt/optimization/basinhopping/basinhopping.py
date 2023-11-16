@@ -66,7 +66,7 @@ def basinhop(ensemble, starting_structure, target, config,
       x0 = torch.tensor(hop.lattice.get_cartesian_coords(hop.frac_coords), 
         device = device, dtype = torch.float)
   hop, iteration = np.unravel_index(np.argmin(ucbs), ucbs.shape)
-  newstructure = starting_structure.copy()
-  for i in range(len(newstructure)):
-    newstructure[i].coords = xs[hop][iteration][(3 * i):(3 * (i + 1))]
-  return newstructure
+  new_structure = starting_structure.copy()
+  for i in range(len(new_structure)):
+    new_structure[i].coords = xs[hop][iteration][(3 * i):(3 * (i + 1))]
+  return new_structure
