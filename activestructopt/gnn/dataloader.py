@@ -8,6 +8,9 @@ from matdeeplearn.preprocessor.helpers import (
     calculate_edges_master,
 )
 
+def reduced_one_hot(Z):
+  return torch.transpose(Z == torch.transpose(torch.unique(Z).repeat((Z.size()[0], 1)), 0, 1), 0, 1).float()
+
 class ActiveData(Data):
   def __len__(self) -> int:
     return 1
@@ -16,9 +19,12 @@ def prepare_data(
     structure, 
     config,
     y = None,
+    pos_grad = False,
+    device = None,
 ):
     num_offsets = config['preprocess_params']['num_offsets']
-    device = config['dataset_device']
+    if device == None:
+        device = config['dataset_device']
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
     edge_dim = config['preprocess_params']['edge_dim']
@@ -29,43 +35,49 @@ def prepare_data(
     ase_crystal = adaptor.get_atoms(structure)
     data.batch = torch.zeros(len(structure), device = device, dtype = torch.long)
     data.n_atoms = torch.tensor([len(structure)], device = device, dtype = torch.long)
-    data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
-                device = device, dtype = torch.float)
     data.cell = torch.tensor([ase_crystal.get_cell().tolist()], 
                 device = device, dtype = torch.float)
     data.z = torch.tensor(ase_crystal.get_atomic_numbers().tolist(), 
                 device = device, dtype = torch.long)
-    data.u = torch.Tensor(np.zeros((3))[np.newaxis, ...])         
+    data.u = torch.Tensor(np.zeros((3))[np.newaxis, ...])
+    data.pos = torch.tensor(ase_crystal.get_positions().tolist(), 
+                device = device, dtype = torch.float)
+    if pos_grad:
+        data.pos.requires_grad_()
+
+    if config['preprocess_params']['preprocess_edges']:
+        edge_gen_out = calculate_edges_master(
+            config['preprocess_params']['edge_calc_method'],
+            r,
+            n_neighbors,
+            num_offsets,
+            ["_"],
+            data.cell,
+            data.pos,
+            data.z,
+        ) 
+                                              
+        data.edge_index = edge_gen_out["edge_index"]
+        data.edge_vec = edge_gen_out["edge_vec"]
+        data.edge_weight = edge_gen_out["edge_weights"]
+        data.cell_offsets = edge_gen_out["cell_offsets"]
+        data.neighbors = edge_gen_out["neighbors"]            
     
-    edge_gen_out = calculate_edges_master(
-        config['preprocess_params']['edge_calc_method'],
-        r,
-        n_neighbors,
-        num_offsets,
-        ["_"],
-        data.cell,
-        data.pos,
-        data.z,
-    ) 
-                                          
-    data.edge_index = edge_gen_out["edge_index"]
-    data.edge_vec = edge_gen_out["edge_vec"]
-    data.edge_weight = edge_gen_out["edge_weights"]
-    data.cell_offsets = edge_gen_out["cell_offsets"]
-    data.neighbors = edge_gen_out["neighbors"]            
+        if(data.edge_vec.dim() > 2):
+            data.edge_vec = data.edge_vec[data.edge_index[0], data.edge_index[1]] 
 
-    if(data.edge_vec.dim() > 2):
-        data.edge_vec = data.edge_vec[data.edge_index[0], data.edge_index[1]] 
-    
-    data.edge_descriptor = {}
-    data.edge_descriptor["distance"] = data.edge_weight
-    data.distances = data.edge_weight
+        if config['preprocess_params']['preprocess_edge_features']:
+            data.edge_descriptor = {}
+            data.edge_descriptor["distance"] = data.edge_weight
+        data.distances = data.edge_weight
 
-    generate_node_features(data, n_neighbors, device=device)
-    generate_edge_features(data, edge_dim, r, device=device)
-
-    delattr(data, "edge_descriptor")
-    data.x = data.x.float()
+    if config['preprocess_params']['preprocess_node_features']:
+        generate_node_features(data, n_neighbors, device=device, node_rep_func = reduced_one_hot)
+        
+    if config['preprocess_params']['preprocess_edge_features']:
+        generate_edge_features(data, edge_dim, r, device=device)
+        if config['preprocess_params']['preprocess_edges']:
+            delattr(data, "edge_descriptor")
 
     if y is not None:
         data.y = torch.tensor(np.array([y]))
