@@ -2,6 +2,8 @@ from activestructopt.optimization.basinhopping.basinhopping import basinhop
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
+import gc
+import torch
 
 def active_learning(
     optfunc, 
@@ -62,5 +64,7 @@ def active_learning(
     mses.append(new_mse)
     if print_mses:
       print(new_mse)
+    gc.collect()
+    torch.cuda.empty_cache()
   return structures, ys, mses, (
       datasets, kfolds, test_indices, test_data, test_targets, ensemble)
