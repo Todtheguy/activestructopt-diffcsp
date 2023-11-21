@@ -2,6 +2,7 @@
 
 import nlopt
 import numpy as np
+from activestructopt.optimization.shared.constraints import lj_repulsion_pymatgen
 
 gn_algs = [nlopt.GN_CRS2_LM, nlopt.GN_ESCH, nlopt.GN_ISRES, nlopt.GN_DIRECT, 
   nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT_L_NOSCAL, 
@@ -31,14 +32,16 @@ def run_nlopt(optfunc, args, exp, structure, N, algorithm = nlopt.GN_ISRES):
     assert not (grad.size > 0)
     modify_structure(x)
     structures.append(structure.copy())
-    return np.mean((exp - optfunc(structure, **(args))) ** 2)
+    return np.mean((exp - optfunc(structure, **(args))) ** 2) + lj_repulsion_pymatgen(structure)
 
   opt = nlopt.opt(algorithm, 3 * natoms)
   opt.set_min_objective(f)
   opt.set_lower_bounds(np.zeros(3 * natoms))
-  opt.set_upper_bounds(np.ones(3 * natoms))
+  opt.set_upper_bounds(2 * np.ones(3 * natoms))
   opt.set_maxeval(N)
   modify_structure(opt.optimize(xstart))
-  return structure, structures
+
+  mses = [np.mean((exp - optfunc(s, **(args))) ** 2) for s in structures]
+  return mses, structures
 
 

@@ -1,5 +1,6 @@
 from bayes_opt import BayesianOptimization
 import numpy as np
+from activestructopt.optimization.shared.constraints import lj_repulsion_pymatgen
 
 def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 10):
   def construct_structure(**kwargs):
@@ -11,14 +12,15 @@ def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 1
     return structure
 
   def msefunc(**kwargs):
-    th = optfunc(construct_structure(**kwargs), **(args))
+    structure = construct_structure(**kwargs)
+    th = optfunc(structure, **(args))
     mse = np.mean((th - exp) ** 2)
-    return -mse
+    return -mse - lj_repulsion_pymatgen(structure)
 
   pbounds = {}
   for i in range(len(starting_structure)):
     for j in range(3):
-      pbounds['x' + str(i + 1) + str(j + 1)] = (0, 1)
+      pbounds['x' + str(i + 1) + str(j + 1)] = (0, 2)
   
   optimizer = BayesianOptimization(
       f = msefunc,
@@ -30,5 +32,5 @@ def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 1
   optimizer.maximize(init_points = nrandom, n_iter = N - nrandom)
 
   structures = [construct_structure(**iter['params']) for iter in optimizer.res]
-  mses = [-iter['target'] for iter in optimizer.res]
-  return structures, mses
+  mses = [np.mean((optfunc(s, **(args)) - exp) ** 2) for s in structures]
+  return mses, structures

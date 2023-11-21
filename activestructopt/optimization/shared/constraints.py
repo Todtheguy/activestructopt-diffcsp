@@ -15,6 +15,16 @@ def lj_repulsion(data, ljrmins, scale = 4000):
     (data.z[data.edge_index[1]] - 1)]
   return torch.mean(torch.pow(rmins / data.edge_weight, 12)) / scale
 
+def lj_repulsion_pymatgen(structure, scale = 4000):
+  repulsions = []
+  for i in range(len(structure)):
+    for j in range(i, len(structure)):
+      rmin = lj_rmins[get_z(structure.sites[i]) - 1, get_z(structure.sites[j]) - 1]
+      r = np.min(structure.lattice.a, structure.lattice.b, structure.lattice.c) if i == j else structure.sites[i].distance(structure.sites[j])
+      repulsions.append((rmin / r) ** 12)
+  return np.mean(repulsions) / scale
+
+
 def lj_reject(structure):
   for i in range(len(structure)):
     for j in range(i + 1, len(structure)):
