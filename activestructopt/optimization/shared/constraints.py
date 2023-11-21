@@ -5,7 +5,7 @@ import numpy as np
 
 lj_rmins = np.genfromtxt(str(Path(__file__).parent / "lj_rmins.csv"), 
   delimiter=",")
-el_symbols = [periodictable.elements[i].symbol for i in range(95)]
+el_symbols = np.array([periodictable.elements[i].symbol for i in range(95)])
 
 def get_z(site):
   return np.argmax(el_symbols == site.species.elements[0].symbol)
