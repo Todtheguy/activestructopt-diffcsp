@@ -20,7 +20,7 @@ def lj_repulsion_pymatgen(structure, scale = 4000):
   for i in range(len(structure)):
     for j in range(i, len(structure)):
       rmin = lj_rmins[get_z(structure.sites[i]) - 1, get_z(structure.sites[j]) - 1]
-      r = np.min(structure.lattice.a, structure.lattice.b, structure.lattice.c) if i == j else structure.sites[i].distance(structure.sites[j])
+      r = np.min([structure.lattice.a, structure.lattice.b, structure.lattice.c]) if i == j else structure.sites[i].distance(structure.sites[j])
       repulsions.append((rmin / r) ** 12)
   return np.mean(repulsions) / scale
 
