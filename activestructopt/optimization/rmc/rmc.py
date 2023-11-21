@@ -43,7 +43,7 @@ def rmc(optfunc, args, exp, structure, N, σ = 0.0025, latticeprob = 0.0, σr = 
     Δmses = [-1.]
     σs = [σ]
 
-    for _ in range(N):
+    for _ in range(N - 1):
         rejected = True
         while rejected:
             new_structure = step(old_structure, latticeprob, σr, σl, σθ, step_type = step_type)
@@ -61,4 +61,4 @@ def rmc(optfunc, args, exp, structure, N, σ = 0.0025, latticeprob = 0.0, σr = 
             old_structure = new_structure.copy()
             old_mse = new_mse
 
-    return structures, mses, accepts, σs
+    return structures, mses, accepts
