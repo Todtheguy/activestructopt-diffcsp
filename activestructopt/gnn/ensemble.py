@@ -45,7 +45,6 @@ class Ensemble:
   
   def train(self):
     for i in range(self.k):
-      process_data(self.config["dataset"])
       self.ensemble[i](self.config, 
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
