@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 lj_rmins = np.genfromtxt(str(Path(__file__).parent / "lj_rmins.csv"), 
-  delimiter=",") - 0.1
+  delimiter=",") * 0.9
 el_symbols = np.array([periodictable.elements[i].symbol for i in range(95)])
 
 def get_z(site):
