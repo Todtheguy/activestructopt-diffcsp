@@ -6,7 +6,9 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
+import torch
 import torch.multiprocessing as mp
+from torch.func import stack_module_state, functional_call, vmap
 import copy
 
 class Runner:
@@ -67,18 +69,32 @@ class Ensemble:
     self.device = device
 
   def predict(self, structure, prepared = False):
-    ensemble_results = []
     if not prepared:
       data = activestructopt.gnn.dataloader.prepare_data(
         structure, self.config['dataset']).to(self.device)
     else:
       data = structure
-    for i in range(self.k):
-      ensemble_results.append(
-        self.ensemble[i].trainer.model._forward(
-        data).cpu().detach().numpy()[0])
-    return np.mean(np.array(ensemble_results), 0), np.std(
-      np.array(ensemble_results), 0) * self.scalar
+
+    #https://pytorch.org/tutorials/intermediate/ensembling.html
+    models = [self.ensemble[i].trainer.model for i in range(self.k)]
+    params, buffers = stack_module_state(models)
+    base_model = copy.deepcopy(models[0])
+    base_model = base_model.to('meta')
+
+    def fmodel(params, buffers, x):
+        return functional_call(base_model, (params, buffers), (x,))
+    
+    prediction = vmap(fmodel)(params, buffers, data)
+    print(prediction.size)
+    print(prediction)
+
+    mean = torch.mean(prediction, dim = 0)
+    # last term to remove Bessel correction and match numpy behavior
+    # https://github.com/pytorch/pytorch/issues/1082
+    std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
+      (self.k - 1) / self.k)
+
+    return mean, std
 
   def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
@@ -87,7 +103,7 @@ class Ensemble:
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
         zscores.append((
-          test_res[i][0][j] - test_targets[i][j]) / test_res[i][1][j])
+          test_res[i][0][j].detach().numpy() - test_targets[i][j]) / test_res[i][1][j].detach().numpy())
     zscores = np.sort(zscores)
     normdist = norm()
     f = lambda x: np.trapz(np.abs(np.cumsum(np.ones(len(zscores))) / len(
