@@ -80,7 +80,7 @@ class Ensemble:
     params, buffers = stack_module_state(models)
     #print(params, buffers)
     base_model = copy.deepcopy(models[0])
-    base_model = base_model.to(self.device)
+    base_model = base_model.to('meta')
 
     def fmodel(params, buffers, x):
         return functional_call(base_model, (params, buffers), (x,))
