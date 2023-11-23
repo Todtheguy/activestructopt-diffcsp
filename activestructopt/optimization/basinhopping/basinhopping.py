@@ -2,6 +2,8 @@ import torch
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion, lj_reject
+from torch.func import stack_module_state, functional_call, vmap
+import copy
 
 def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
@@ -14,10 +16,21 @@ def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
     data.pos.requires_grad_()
-    prediction = ensemble.ensemble[0].trainer.model._forward(data)
-    for j in range(1, ensemble.k):
-      prediction = torch.cat((prediction,
-                ensemble.ensemble[j].trainer.model._forward(data)), dim = 0)
+
+    #https://pytorch.org/tutorials/intermediate/ensembling.html
+    models = [ensemble.ensemble[i].trainer.model for i in range(ensemble.k)]
+    params, buffers = stack_module_state(models)
+    base_model = copy.deepcopy(models[0])
+    base_model = base_model.to('meta')
+
+    def fmodel(params, buffers, x):
+        return functional_call(base_model, (params, buffers), (x,))
+    
+    prediction = vmap(fmodel)(params, buffers, data)
+
+    print(prediction.size)
+    print(prediction)
+
     mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
     # https://github.com/pytorch/pytorch/issues/1082
