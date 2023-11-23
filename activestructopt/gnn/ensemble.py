@@ -80,7 +80,7 @@ class Ensemble:
       data = structure
 
     with mp.Pool(5) as p:
-      prediction = torch.stack(p.map(train_model_func, zip( 
+      prediction = torch.stack(p.map(predict_model_func, zip( 
         [copy.deepcopy(self.ensemble[i].trainer.model) for i in range(self.k)],
         [copy.deepcopy(data) for i in range(self.k)])))
     print(prediction.size)
