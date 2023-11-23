@@ -7,6 +7,7 @@ from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
 import torch.multiprocessing as mp
+import copy
 
 class Runner:
   def __init__(self):
@@ -55,9 +56,9 @@ class Ensemble:
     mp.set_start_method('spawn')
     with mp.Pool(5) as p:
       self.ensemble = p.map(train_model_func, zip( 
-        [self.config for _ in range(self.k)],
-        [self.datasets[i][0] for i in range(self.k)],
-        [self.datasets[i][1] for i in range(self.k)]))
+        [copy.deepcopy(self.config) for _ in range(self.k)],
+        [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
+        [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
     for i in range(self.k):
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
