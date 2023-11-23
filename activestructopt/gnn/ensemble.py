@@ -41,7 +41,7 @@ def train_model_func(params):
   config, train_data, val_data = params
   model(config, ConfigSetup('train', train_data, val_data))
   model.trainer.model.eval()
-  return model
+  return copy.deepcopy(model)
 
 class Ensemble:
   def __init__(self, k, config, datasets):
