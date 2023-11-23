@@ -45,6 +45,9 @@ def train_model_func(params):
   model.trainer.model.eval()
   return copy.deepcopy(model)
 
+def predict_model_func(model, data):
+  return copy.deepcopy(model._forward(data))
+
 class Ensemble:
   def __init__(self, k, config, datasets):
     self.k = k
@@ -53,16 +56,16 @@ class Ensemble:
     self.ensemble = []
     self.scalar = 1.0
     self.device = 'cpu'
+    mp.set_start_method('spawn')
   
   def train(self):
-    mp.set_start_method('spawn')
     with mp.Pool(5) as p:
       self.ensemble = p.map(train_model_func, zip( 
         [copy.deepcopy(self.config) for _ in range(self.k)],
         [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
         [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
-    #for i in range(self.k):
-    #  self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+    for i in range(self.k):
+      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
@@ -75,18 +78,10 @@ class Ensemble:
     else:
       data = structure
 
-    #https://pytorch.org/tutorials/intermediate/ensembling.html
-    models = [self.ensemble[i].trainer.model for i in range(self.k)]
-    params, buffers = stack_module_state(models)
-    #print(params, buffers)
-    base_model = copy.deepcopy(models[0])
-    base_model = base_model.to('meta')
-
-    def fmodel(params, buffers, x):
-        return functional_call(base_model, (params, buffers), (x,))
-    
-    prediction = vmap(fmodel, in_dims = (0, 0, None))(params, buffers, data)
-    prediction = torch.stack([p['output'] for p in prediction])
+    with mp.Pool(5) as p:
+      prediction = torch.stack(p.map(train_model_func, zip( 
+        [copy.deepcopy(self.ensemble[i].trainer.model) for i in range(self.k)],
+        [copy.deepcopy(data) for i in range(self.k)])))
     print(prediction.size)
     print(prediction)
 
