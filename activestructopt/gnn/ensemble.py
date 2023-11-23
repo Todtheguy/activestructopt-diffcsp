@@ -47,7 +47,7 @@ def train_model_func(params):
 
 def predict_model_func(params):
   model, data = params
-  return copy.deepcopy(model._forward(data))
+  return model._forward(data)
 
 class Ensemble:
   def __init__(self, k, config, datasets):
