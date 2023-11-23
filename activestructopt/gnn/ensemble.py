@@ -6,6 +6,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
+from multiprocessing import Pool
 
 class Runner:
   def __init__(self):
@@ -44,11 +45,13 @@ class Ensemble:
     self.device = 'cpu'
   
   def train(self):
-    for i in range(self.k):
+    def train_func(i):
       self.ensemble[i](self.config, 
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+    with Pool(5) as p:
+      p.map(train_func, range(self.k))
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
