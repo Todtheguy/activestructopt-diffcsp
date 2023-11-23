@@ -35,6 +35,12 @@ class ConfigSetup:
         'val': val_data, 
       }
 
+def train_model_func(params):
+  model, config, train_data, val_data = params
+  model(config, ConfigSetup('train', train_data, val_data))
+  model.trainer.model.eval()
+  model.trainer.model = compile(model.trainer.model)
+
 class Ensemble:
   def __init__(self, k, config, datasets):
     self.k = k
@@ -45,13 +51,11 @@ class Ensemble:
     self.device = 'cpu'
   
   def train(self):
-    def train_func(i):
-      self.ensemble[i](self.config, 
-        ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
-      self.ensemble[i].trainer.model.eval()
-      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     with Pool(5) as p:
-      p.map(train_func, range(self.k))
+      p.map(train_model_func, zip(self.ensemble, 
+        [self.config for _ in range(self.k)],
+        [self.datasets[i][0] for i in range(self.k)],
+        [self.datasets[i][1] for i in range(self.k)]))
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
