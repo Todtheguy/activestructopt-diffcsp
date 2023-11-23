@@ -85,6 +85,7 @@ class Ensemble:
         return functional_call(base_model, (params, buffers), (x,))
     
     prediction = vmap(fmodel)(params, buffers, data)
+    prediction = torch.stack([p['output'] for p in prediction])
     print(prediction.size)
     print(prediction)
 
