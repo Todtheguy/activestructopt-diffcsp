@@ -6,7 +6,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
-from torch.multiprocessing import Pool
+import torch.multiprocessing as mp
 
 class Runner:
   def __init__(self):
@@ -53,7 +53,8 @@ class Ensemble:
     self.device = 'cpu'
   
   def train(self):
-    with Pool(5) as p:
+    mp.set_start_method('spawn')
+    with mp.Pool(5) as p:
       self.ensemble = p.map(train_model_func, zip( 
         [self.config for _ in range(self.k)],
         [self.datasets[i][0] for i in range(self.k)],
