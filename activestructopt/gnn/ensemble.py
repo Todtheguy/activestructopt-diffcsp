@@ -64,8 +64,8 @@ class Ensemble:
         [copy.deepcopy(self.config) for _ in range(self.k)],
         [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
         [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
-    for i in range(self.k):
-      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+    #for i in range(self.k):
+    #  self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
