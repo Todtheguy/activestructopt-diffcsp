@@ -45,7 +45,8 @@ def train_model_func(params):
   model.trainer.model.eval()
   return copy.deepcopy(model)
 
-def predict_model_func(model, data):
+def predict_model_func(params):
+  model, data = params
   return copy.deepcopy(model._forward(data))
 
 class Ensemble:
