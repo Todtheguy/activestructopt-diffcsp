@@ -14,7 +14,15 @@ def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
     data.pos.requires_grad_()
-    mean, std = ensemble.predict(data, prepared = True)
+    prediction = ensemble.ensemble[0].trainer.model._forward(data)
+    for j in range(1, ensemble.k):
+      prediction = torch.cat((prediction,
+                ensemble.ensemble[j].trainer.model._forward(data)), dim = 0)
+    mean = torch.mean(prediction, dim = 0)
+    # last term to remove Bessel correction and match numpy behavior
+    # https://github.com/pytorch/pytorch/issues/1082
+    std = ensemble.scalar * torch.std(prediction, dim = 0) * np.sqrt(
+      (ensemble.k - 1) / ensemble.k)
     yhat = torch.mean((std ** 2) + ((target - mean) ** 2))
     s = torch.sqrt(2 * torch.sum((std ** 4) + 2 * (std ** 2) * (
       (target - mean) ** 2))) / (len(target))

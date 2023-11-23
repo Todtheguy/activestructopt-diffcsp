@@ -6,9 +6,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
-import torch
 import torch.multiprocessing as mp
-from torch.func import stack_module_state, functional_call, vmap
 import copy
 
 class Runner:
@@ -45,10 +43,6 @@ def train_model_func(params):
   model.trainer.model.eval()
   return copy.deepcopy(model)
 
-def predict_model_func(params):
-  model, data = params
-  return model._forward(data)
-
 class Ensemble:
   def __init__(self, k, config, datasets):
     self.k = k
@@ -57,42 +51,34 @@ class Ensemble:
     self.ensemble = []
     self.scalar = 1.0
     self.device = 'cpu'
-    mp.set_start_method('spawn')
   
   def train(self):
+    mp.set_start_method('spawn')
     with mp.Pool(5) as p:
       self.ensemble = p.map(train_model_func, zip( 
         [copy.deepcopy(self.config) for _ in range(self.k)],
         [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
         [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
-    #for i in range(self.k):
-    #  self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+    for i in range(self.k):
+      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
     self.device = device
 
   def predict(self, structure, prepared = False):
+    ensemble_results = []
     if not prepared:
       data = activestructopt.gnn.dataloader.prepare_data(
         structure, self.config['dataset']).to(self.device)
     else:
       data = structure
-
-    with mp.Pool(5) as p:
-      prediction = torch.stack(p.map(predict_model_func, zip( 
-        [copy.deepcopy(self.ensemble[i].trainer.model) for i in range(self.k)],
-        [copy.deepcopy(data) for i in range(self.k)])))
-    print(prediction.size)
-    print(prediction)
-
-    mean = torch.mean(prediction, dim = 0)
-    # last term to remove Bessel correction and match numpy behavior
-    # https://github.com/pytorch/pytorch/issues/1082
-    std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
-      (self.k - 1) / self.k)
-
-    return mean, std
+    for i in range(self.k):
+      ensemble_results.append(
+        self.ensemble[i].trainer.model._forward(
+        data).cpu().detach().numpy()[0])
+    return np.mean(np.array(ensemble_results), 0), np.std(
+      np.array(ensemble_results), 0) * self.scalar
 
   def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
@@ -101,7 +87,7 @@ class Ensemble:
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
         zscores.append((
-          test_res[i][0][j].detach().numpy() - test_targets[i][j]) / test_res[i][1][j].detach().numpy())
+          test_res[i][0][j] - test_targets[i][j]) / test_res[i][1][j])
     zscores = np.sort(zscores)
     normdist = norm()
     f = lambda x: np.trapz(np.abs(np.cumsum(np.ones(len(zscores))) / len(
