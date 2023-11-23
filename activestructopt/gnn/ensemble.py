@@ -40,7 +40,6 @@ def train_model_func(params):
   config, train_data, val_data = params
   model(config, ConfigSetup('train', train_data, val_data))
   model.trainer.model.eval()
-  model.trainer.model = compile(model.trainer.model)
   return model
 
 class Ensemble:
@@ -59,6 +58,8 @@ class Ensemble:
         [self.config for _ in range(self.k)],
         [self.datasets[i][0] for i in range(self.k)],
         [self.datasets[i][1] for i in range(self.k)]))
+    for i in range(self.k):
+      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
