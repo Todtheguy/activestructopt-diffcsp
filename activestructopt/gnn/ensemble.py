@@ -79,7 +79,7 @@ class Ensemble:
     models = [self.ensemble[i].trainer.model for i in range(self.k)]
     params, buffers = stack_module_state(models)
     base_model = copy.deepcopy(models[0])
-    base_model = base_model.to('meta')
+    #base_model = base_model.to('meta')
 
     def fmodel(params, buffers, x):
         return functional_call(base_model, (params, buffers), (x,))
