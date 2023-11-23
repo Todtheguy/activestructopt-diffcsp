@@ -78,11 +78,12 @@ class Ensemble:
     #https://pytorch.org/tutorials/intermediate/ensembling.html
     models = [self.ensemble[i].trainer.model for i in range(self.k)]
     params, buffers = stack_module_state(models)
-    base_model = copy.deepcopy(models[0])
-    #base_model = base_model.to('meta')
+    print(params, buffers)
+    #base_model = copy.deepcopy(models[0])
+    #base_model = base_model.to(self.device)
 
     def fmodel(params, buffers, x):
-        return functional_call(base_model, (params, buffers), (x,))
+        return functional_call(self.ensemble[0].trainer.model, (params, buffers), (x,))
     
     prediction = vmap(fmodel, in_dims = (0, 0, None))(params, buffers, data)
     prediction = torch.stack([p['output'] for p in prediction])
