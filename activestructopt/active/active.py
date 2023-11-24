@@ -27,7 +27,7 @@ def active_learning(
     print_mses = True,
     ):
   mp.set_start_method('spawn', force = True)
-  pool = mp.Pool(5)
+  pool = mp.Pool(2)
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
     optfunc,
