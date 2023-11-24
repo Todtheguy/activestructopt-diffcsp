@@ -66,7 +66,7 @@ class Ensemble:
       [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
       [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]), 
       error_callback = handle_error)
-    self.ensemble = [p.get() for p in processes]
+    self.ensemble = processes.get()
     del pool
     for i in range(self.k):
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
