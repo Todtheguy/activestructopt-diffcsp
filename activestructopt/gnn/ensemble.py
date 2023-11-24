@@ -36,6 +36,10 @@ class ConfigSetup:
         'val': val_data, 
       }
 
+# https://superfastpython.com/multiprocessing-pool-fail-silently/
+def handle_error(error):
+	print(error, flush=True)
+
 def train_model_func(params):
   model = Runner()
   config, train_data, val_data = params
@@ -57,10 +61,12 @@ class Ensemble:
 
   def train(self):
     pool = mp.Pool(5)
-    self.ensemble = pool.map(train_model_func, zip( 
+    processes = pool.map_async(train_model_func, zip( 
       [copy.deepcopy(self.config) for _ in range(self.k)],
       [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
-      [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
+      [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]), 
+      error_callback = handle_error)
+    self.ensemble = [p.get() for p in processes]
     del pool
     for i in range(self.k):
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
