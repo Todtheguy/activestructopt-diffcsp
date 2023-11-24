@@ -6,6 +6,7 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
+import torch.multiprocessing as mp
 import copy
 
 class Runner:
@@ -40,17 +41,20 @@ def train_model_func(params):
   config, train_data, val_data = params
   model(config, ConfigSetup('train', train_data, val_data))
   model.trainer.model.eval()
-  return copy.deepcopy(model)
+  to_return = copy.deepcopy(model)
+  del config, train_data, val_data, model
+  return to_return
 
 class Ensemble:
-  def __init__(self, k, config, datasets, pool):
+  def __init__(self, k, config, datasets):
     self.k = k
     self.config = config
     self.datasets = datasets
     self.ensemble = []
     self.scalar = 1.0
     self.device = 'cpu'
-    self.pool = pool
+    self.pool = mp.Pool(2)
+    mp.set_start_method('spawn', force = True)
 
   def train(self):
     self.ensemble = self.pool.map(train_model_func, zip( 
