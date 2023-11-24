@@ -65,7 +65,6 @@ class Ensemble:
       [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]), 
       error_callback = handle_error)
     self.ensemble = processes.get()
-    del pool
     for i in range(self.k):
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
