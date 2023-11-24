@@ -53,14 +53,15 @@ class Ensemble:
     self.ensemble = []
     self.scalar = 1.0
     self.device = 'cpu'
-    self.pool = mp.Pool(2)
     mp.set_start_method('spawn', force = True)
 
   def train(self):
-    self.ensemble = self.pool.map(train_model_func, zip( 
+    pool = mp.Pool(2)
+    self.ensemble = pool.map(train_model_func, zip( 
       [copy.deepcopy(self.config) for _ in range(self.k)],
       [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
       [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]))
+    del pool
     for i in range(self.k):
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
