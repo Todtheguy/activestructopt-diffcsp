@@ -54,7 +54,7 @@ class Ensemble:
     mp.set_start_method('spawn', force = True)
 
   def train(self):
-    with mp.Pool(5) as p:
+    with mp.Pool(2) as p:
       self.ensemble = p.map(train_model_func, zip( 
         [copy.deepcopy(self.config) for _ in range(self.k)],
         [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
