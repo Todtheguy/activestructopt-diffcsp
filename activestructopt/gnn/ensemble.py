@@ -9,8 +9,6 @@ from torch_geometric import compile
 import torch.multiprocessing as mp
 import copy
 
-mp.set_start_method('spawn')
-
 class Runner:
   def __init__(self):
     self.config = None
@@ -53,7 +51,8 @@ class Ensemble:
     self.ensemble = []
     self.scalar = 1.0
     self.device = 'cpu'
-  
+    mp.set_start_method('spawn', force = True)
+
   def train(self):
     with mp.Pool(5) as p:
       self.ensemble = p.map(train_model_func, zip( 
