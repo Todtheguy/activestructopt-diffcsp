@@ -4,7 +4,6 @@ from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
 import gc
 import torch
-import torch.multiprocessing as mp
 
 def active_learning(
     optfunc, 
@@ -26,8 +25,6 @@ def active_learning(
     bh_σ = 0.0025,
     print_mses = True,
     ):
-  mp.set_start_method('spawn', force = True)
-  pool = mp.Pool(2)
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
     optfunc,
@@ -46,7 +43,7 @@ def active_learning(
   active_steps = max_forward_calls - N
   for i in range(active_steps):
     starting_structure = structures[np.argmin(mses)].copy()
-    ensemble = Ensemble(k, config, datasets, pool)
+    ensemble = Ensemble(k, config, datasets)
     ensemble.train()
     ensemble.set_scalar_calibration(test_data, test_targets)
     new_structure = basinhop(ensemble, starting_structure, target, 

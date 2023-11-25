@@ -6,7 +6,6 @@ import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
-import copy
 
 class Runner:
   def __init__(self):
@@ -35,37 +34,20 @@ class ConfigSetup:
         'val': val_data, 
       }
 
-# https://superfastpython.com/multiprocessing-pool-fail-silently/
-def handle_error(error):
-	print(error, flush=True)
-
-def train_model_func(params):
-  model = Runner()
-  config, train_data, val_data = params
-  model(config, ConfigSetup('train', train_data, val_data))
-  model.trainer.model.eval()
-  to_return = copy.deepcopy(model)
-  #del config, train_data, val_data, model
-  return to_return
-
 class Ensemble:
-  def __init__(self, k, config, datasets, pool):
+  def __init__(self, k, config, datasets):
     self.k = k
     self.config = config
     self.datasets = datasets
-    self.ensemble = []
+    self.ensemble = [Runner() for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
-    self.pool = pool
-
+  
   def train(self):
-    processes = self.pool.map_async(train_model_func, zip( 
-      [copy.deepcopy(self.config) for _ in range(self.k)],
-      [copy.deepcopy(self.datasets[i][0]) for i in range(self.k)],
-      [copy.deepcopy(self.datasets[i][1]) for i in range(self.k)]), 
-      error_callback = handle_error)
-    self.ensemble = processes.get()
     for i in range(self.k):
+      self.ensemble[i](self.config, 
+        ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
+      self.ensemble[i].trainer.model.eval()
       self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
