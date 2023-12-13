@@ -4,6 +4,8 @@ from activestructopt.dataset.dataset import make_data_splits, update_datasets
 import numpy as np
 import gc
 import torch
+import pickle
+import sys
 
 def active_learning(
     optfunc, 
@@ -24,6 +26,7 @@ def active_learning(
     bh_step_size = 0.1,
     bh_σ = 0.0025,
     print_mses = True,
+    save_progress_dir = None,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
@@ -46,7 +49,7 @@ def active_learning(
     ensemble = Ensemble(k, config, datasets)
     ensemble.train()
     ensemble.set_scalar_calibration(test_data, test_targets)
-    new_structure = basinhop(ensemble, starting_structure, target, 
+    new_structure, xs, ucbs = basinhop(ensemble, starting_structure, target, 
       config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
       λ = 0.0 if i == (active_steps - 1) else 1.0, lr = bh_lr, 
       step_size = bh_step_size, rmcσ = bh_σ)
@@ -66,5 +69,15 @@ def active_learning(
       print(new_mse)
     gc.collect()
     torch.cuda.empty_cache()
+    if save_progress_dir is not None:
+      res = {'index': sys.argv[1],
+            'iter': i,
+            'structures': structures,
+            'ys': ys,
+            'mses': mses}
+
+      with open(save_progress_dir + "/" + str(sys.argv[1]) + "_" + str(i) + ".pkl", "wb") as file:
+          pickle.dump(res, file)
+
   return structures, ys, mses, (
-      datasets, kfolds, test_indices, test_data, test_targets, ensemble)
+      datasets, kfolds, test_indices, test_data, test_targets, ensemble, xs, ucbs)
