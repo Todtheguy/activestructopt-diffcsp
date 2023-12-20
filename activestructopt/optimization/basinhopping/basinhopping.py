@@ -3,8 +3,10 @@ import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion, lj_reject
 
-def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
+def run_adam(ensemble, target, starting_structure, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
+  x0 = torch.tensor(starting_structure.lattice.get_cartesian_coords(
+        starting_structure.frac_coords), device = device, dtype = torch.float)
   ucbs = torch.zeros(niters, device = device)
   xs = torch.zeros((niters, 3 * x0.size()[0]), device = device)
   target = torch.tensor(target, device = device)
@@ -49,10 +51,7 @@ def basinhop(ensemble, starting_structures, target, config,
   ljrmins = torch.tensor(lj_rmins, device = device)
 
   for i in range(nhops):
-    x0 = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
-        starting_structures[i].frac_coords), device = device, dtype = torch.float)
-
-    new_ucbs, new_xs = run_adam(ensemble, target, x0, starting_structures[i], 
+    new_ucbs, new_xs = run_adam(ensemble, target, starting_structures[i], 
       config, ljrmins, niters = niters, λ = λ, lr = lr, device = device)
     
     ucbs[i] = new_ucbs
