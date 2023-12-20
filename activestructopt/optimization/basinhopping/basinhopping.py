@@ -57,8 +57,7 @@ def basinhop(ensemble, starting_structures, target, config,
     
     ucbs[i] = new_ucb
     xs[i] = new_x
-  hop, iteration = np.unravel_index(np.argmin(ucbs), ucbs.shape)
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):
-    new_structure[i].coords = xs[hop][iteration][(3 * i):(3 * (i + 1))]
+    new_structure[i].coords = xs[np.argmin(ucbs)][(3 * i):(3 * (i + 1))]
   return new_structure
