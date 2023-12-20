@@ -40,37 +40,25 @@ def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
   del ucbs, xs, target, data
   return to_return
 
-def basinhop(ensemble, starting_structure, target, config,
+def basinhop(ensemble, starting_structures, target, config,
                   nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
   ucbs = np.zeros((nhops, niters))
-  xs = np.zeros((nhops, niters, 3 * len(starting_structure)))
+  xs = np.zeros((nhops, niters, 3 * len(starting_structures[0])))
   ljrmins = torch.tensor(lj_rmins, device = device)
 
-  x0 = torch.tensor(starting_structure.lattice.get_cartesian_coords(
-    starting_structure.frac_coords), device = device, dtype = torch.float)
-
   for i in range(nhops):
-    new_ucbs, new_xs = run_adam(ensemble, target, x0, starting_structure, 
+    x0 = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
+        starting_structures[i].frac_coords), device = device, dtype = torch.float)
+
+    new_ucbs, new_xs = run_adam(ensemble, target, x0, starting_structures[i], 
       config, ljrmins, niters = niters, λ = λ, lr = lr, device = device)
     
     ucbs[i] = new_ucbs
     xs[i] = new_xs
-    if not i + 1 == nhops:
-      accepted = xs[i][-1] if i == 0 or np.log(np.random.rand()) < (
-        ucbs[i - 1][-1] - ucbs[i][-1]) / (2 * rmcσ ** 2) else accepted
-      rejected = True
-      while rejected:
-        hop = starting_structure.copy()
-        for j in range(len(hop)):
-          hop[j].coords = accepted[(3 * j):(3 * (j + 1))]
-        hop.perturb(step_size)
-        rejected = lj_reject(hop)
-      x0 = torch.tensor(hop.lattice.get_cartesian_coords(hop.frac_coords), 
-        device = device, dtype = torch.float)
   hop, iteration = np.unravel_index(np.argmin(ucbs), ucbs.shape)
-  new_structure = starting_structure.copy()
+  new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):
     new_structure[i].coords = xs[hop][iteration][(3 * i):(3 * (i + 1))]
   return new_structure
