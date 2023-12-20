@@ -40,22 +40,23 @@ def run_adam(ensemble, target, starting_structure, config, ljrmins,
     
   to_return = ucbs.detach().cpu().numpy(), xs.detach().cpu().numpy()
   del ucbs, xs, target, data
+  to_return = to_return[0][np.argmin(ucbs)], to_return[1][np.argmin(ucbs)]
   return to_return
 
 def basinhop(ensemble, starting_structures, target, config,
                   nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
-  ucbs = np.zeros((nhops, niters))
-  xs = np.zeros((nhops, niters, 3 * len(starting_structures[0])))
+  ucbs = np.zeros((nhops))
+  xs = np.zeros((nhops, 3 * len(starting_structures[0])))
   ljrmins = torch.tensor(lj_rmins, device = device)
 
   for i in range(nhops):
-    new_ucbs, new_xs = run_adam(ensemble, target, starting_structures[i], 
+    new_ucb, new_x = run_adam(ensemble, target, starting_structures[i], 
       config, ljrmins, niters = niters, λ = λ, lr = lr, device = device)
     
-    ucbs[i] = new_ucbs
-    xs[i] = new_xs
+    ucbs[i] = new_ucb
+    xs[i] = new_x
   hop, iteration = np.unravel_index(np.argmin(ucbs), ucbs.shape)
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):
