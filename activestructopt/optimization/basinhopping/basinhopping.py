@@ -40,7 +40,7 @@ def run_adam(ensemble, target, starting_structure, config, ljrmins,
     
   to_return = ucbs.detach().cpu().numpy(), xs.detach().cpu().numpy()
   del ucbs, xs, target, data
-  to_return = to_return[0][np.argmin(ucbs)], to_return[1][np.argmin(ucbs)]
+  to_return = to_return[0][np.argmin(to_return[0])], to_return[1][np.argmin(to_return[0])]
   return to_return
 
 def basinhop(ensemble, starting_structures, target, config,
