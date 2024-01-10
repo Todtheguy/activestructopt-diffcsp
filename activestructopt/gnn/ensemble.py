@@ -1,11 +1,12 @@
-from matdeeplearn.common.config.build_config import build_config
 from matdeeplearn.common.trainer_context import new_trainer_context
-from matdeeplearn.preprocessor.processor import process_data
-import activestructopt.gnn.dataloader
+from activestructopt.gnn.dataloader import prepare_data
 import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
 from torch_geometric import compile
+import torch
+from torch.func import stack_module_state, functional_call, vmap
+import copy
 
 class Runner:
   def __init__(self):
@@ -34,6 +35,9 @@ class ConfigSetup:
         'val': val_data, 
       }
 
+def fmodel(base_model, params, buffers, x):
+  return functional_call(base_model, (params, buffers), (x,))
+
 class Ensemble:
   def __init__(self, k, config, datasets):
     self.k = k
@@ -48,25 +52,31 @@ class Ensemble:
       self.ensemble[i](self.config, 
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
       self.ensemble[i].trainer.model.eval()
-      self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
+      #self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
     self.device = device
+    #https://pytorch.org/tutorials/intermediate/ensembling.html
+    models = [self.ensemble[i].trainer.model for i in range(self.k)]
+    self.params, self.buffers = stack_module_state(models)
+    base_model = copy.deepcopy(models[0])
+    self.base_model = base_model.to('meta')
 
   def predict(self, structure, prepared = False):
-    ensemble_results = []
-    if not prepared:
-      data = activestructopt.gnn.dataloader.prepare_data(
-        structure, self.config['dataset']).to(self.device)
-    else:
-      data = structure
-    for i in range(self.k):
-      ensemble_results.append(
-        self.ensemble[i].trainer.model._forward(
-        data).cpu().detach().numpy()[0])
-    return np.mean(np.array(ensemble_results), 0), np.std(
-      np.array(ensemble_results), 0) * self.scalar
+    data = structure if prepared else prepare_data(
+      structure, self.config['dataset']).to(self.device)
+    prediction = torch.stack([p['output'] for p in vmap(
+      fmodel, in_dims = (0, 0, 0, None))(
+      self.base_model, self.params, self.buffers, data)])
+
+    mean = torch.mean(prediction, dim = 0)
+    # last term to remove Bessel correction and match numpy behavior
+    # https://github.com/pytorch/pytorch/issues/1082
+    std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
+      (self.k - 1) / self.k)
+
+    return mean, std
 
   def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
