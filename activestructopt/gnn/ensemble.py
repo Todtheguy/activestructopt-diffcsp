@@ -67,7 +67,7 @@ class Ensemble:
     data = structure if prepared else prepare_data(
       structure, self.config['dataset']).to(self.device)
     prediction = torch.stack([p['output'] for p in vmap(
-      fmodel, in_dims = (0, 0, 0, None))(
+      fmodel, in_dims = (None, 0, 0, None))(
       self.base_model, self.params, self.buffers, data)])
 
     mean = torch.mean(prediction, dim = 0)
