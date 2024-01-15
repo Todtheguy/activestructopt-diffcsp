@@ -66,8 +66,9 @@ class Ensemble:
       return functional_call(self.base_model, (params, buffers), (x,))['output']
     data = structure if prepared else prepare_data(
       structure, self.config['dataset']).to(self.device)
-    prediction = torch.stack(vmap(
-      fmodel, in_dims = (0, 0, None))(self.params, self.buffers, data))
+    prediction = vmap(fmodel, in_dims = (0, 0, None))(
+      self.params, self.buffers, data)
+    print(prediction)
 
     mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
