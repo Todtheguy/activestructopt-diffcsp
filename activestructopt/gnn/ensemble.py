@@ -68,7 +68,7 @@ class Ensemble:
       structure, self.config['dataset']).to(self.device)
     prediction = vmap(fmodel, in_dims = (0, 0, None))(
       self.params, self.buffers, data)
-    print(prediction.size)
+    print(prediction.size())
 
     mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
