@@ -35,9 +35,6 @@ class ConfigSetup:
         'val': val_data, 
       }
 
-def fmodel(base_model, params, buffers, x):
-  return functional_call(base_model, (params, buffers), (x,))
-
 class Ensemble:
   def __init__(self, k, config, datasets):
     self.k = k
@@ -62,13 +59,15 @@ class Ensemble:
     self.params, self.buffers = stack_module_state(models)
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
+    
 
   def predict(self, structure, prepared = False):
+    def fmodel(params, buffers, x):
+      return functional_call(self.base_model, (params, buffers), (x,))
     data = structure if prepared else prepare_data(
       structure, self.config['dataset']).to(self.device)
     prediction = torch.stack([p['output'] for p in vmap(
-      fmodel, in_dims = (None, 0, 0, None))(
-      self.base_model, self.params, self.buffers, data)])
+      fmodel, in_dims = (0, 0, None))(self.params, self.buffers, data)])
 
     mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
