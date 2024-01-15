@@ -72,8 +72,8 @@ class Ensemble:
     mean = torch.mean(prediction, dim = 0)[0]
     # last term to remove Bessel correction and match numpy behavior
     # https://github.com/pytorch/pytorch/issues/1082
-    std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
-      (self.k - 1) / self.k)[0]
+    std = self.scalar * torch.std(prediction, dim = 0)[0] * np.sqrt(
+      (self.k - 1) / self.k)
 
     return mean, std
 
