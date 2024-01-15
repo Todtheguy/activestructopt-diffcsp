@@ -84,7 +84,8 @@ class Ensemble:
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
         zscores.append((
-          test_res[i][0][j] - test_targets[i][j]) / test_res[i][1][j])
+          test_res[i][0][j].item() - test_targets[i][j]
+          ) / test_res[i][1][j].item())
     zscores = np.sort(zscores)
     normdist = norm()
     f = lambda x: np.trapz(np.abs(np.cumsum(np.ones(len(zscores))) / len(
