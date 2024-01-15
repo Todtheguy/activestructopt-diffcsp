@@ -16,15 +16,7 @@ def run_adam(ensemble, target, starting_structure, config, ljrmins,
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
     data.pos.requires_grad_()
-    prediction = ensemble.ensemble[0].trainer.model._forward(data)
-    for j in range(1, ensemble.k):
-      prediction = torch.cat((prediction,
-                ensemble.ensemble[j].trainer.model._forward(data)), dim = 0)
-    mean = torch.mean(prediction, dim = 0)
-    # last term to remove Bessel correction and match numpy behavior
-    # https://github.com/pytorch/pytorch/issues/1082
-    std = ensemble.scalar * torch.std(prediction, dim = 0) * np.sqrt(
-      (ensemble.k - 1) / ensemble.k)
+    mean, std = ensemble.predict(data, prepared = True)
     yhat = torch.mean((std ** 2) + ((target - mean) ** 2))
     s = torch.sqrt(2 * torch.sum((std ** 4) + 2 * (std ** 2) * (
       (target - mean) ** 2))) / (len(target))
@@ -34,9 +26,9 @@ def run_adam(ensemble, target, starting_structure, config, ljrmins,
       optimizer.step()
     xs[i] = data.pos.detach().flatten()
     ucbs[i] = ucb.detach().item()
-    yhat, s, mean, std, prediction, ucb = yhat.detach(), s.detach(
-      ), mean.detach(), std.detach(), prediction.detach(), ucb.detach()
-    del yhat, s, mean, std, prediction, ucb
+    yhat, s, mean, std, ucb = yhat.detach(), s.detach(
+      ), mean.detach(), std.detach(), ucb.detach()
+    del yhat, s, mean, std, ucb
     
   to_return = ucbs.detach().cpu().numpy(), xs.detach().cpu().numpy()
   del ucbs, xs, target, data
