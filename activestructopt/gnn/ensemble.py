@@ -51,14 +51,14 @@ class Ensemble:
     for i in range(self.k):
       self.ensemble[i](self.config, 
         ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
-      self.ensemble[i].trainer.model.eval()
-      #self.ensemble[i].trainer.model = compile(self.ensemble[i].trainer.model)
-    device = next(iter(self.ensemble[0].trainer.model.state_dict().values(
+      self.ensemble[i].trainer.model[0].eval()
+      #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
+    device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
       ))).get_device()
     device = 'cpu' if device == -1 else 'cuda:' + str(device)
     self.device = device
     #https://pytorch.org/tutorials/intermediate/ensembling.html
-    models = [self.ensemble[i].trainer.model for i in range(self.k)]
+    models = [self.ensemble[i].trainer.model[0] for i in range(self.k)]
     self.params, self.buffers = stack_module_state(models)
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
