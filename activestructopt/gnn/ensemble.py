@@ -59,7 +59,6 @@ class Ensemble:
     self.params, self.buffers = stack_module_state(models)
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
-    
 
   def predict(self, structure, prepared = False):
     def fmodel(params, buffers, x):
@@ -67,7 +66,7 @@ class Ensemble:
     data = structure if prepared else prepare_data(
       structure, self.config['dataset']).to(self.device)
     prediction = vmap(fmodel, in_dims = (0, 0, None))(
-      self.params, self.buffers, data)
+      self.params, self.buffers, torch.utils.data.Dataset(data))
     print(prediction.size())
 
     mean = torch.mean(prediction, dim = 0)
