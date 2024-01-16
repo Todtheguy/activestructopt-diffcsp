@@ -22,10 +22,10 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     predictions = ensemble.predict(data, prepared = True)
     ucbs = torch.zeros(len(starting_structures))
     for j in range(len(starting_structures)):
-      yhat = torch.mean((predictions[j, 1] ** 2) + ((target - predictions[j, 0]) ** 2))
-      s = torch.sqrt(2 * torch.sum((predictions[j, 1] ** 4) + 2 * (predictions[j, 1] ** 2) * (
-        (target - predictions[j, 0]) ** 2))) / (len(target))
-      ucbs[j] = yhat - λ * s + lj_repulsion(data, ljrmins)
+      yhat = torch.mean((predictions[1, j] ** 2) + ((target - predictions[0, j]) ** 2))
+      s = torch.sqrt(2 * torch.sum((predictions[1, j] ** 4) + 2 * (predictions[1, j] ** 2) * (
+        (target - predictions[0, j]) ** 2))) / (len(target))
+      ucbs[j] = yhat - λ * s + lj_repulsion(data[j], ljrmins)
     if i != niters - 1:
       for j in range(len(starting_structures)):
         ucbs[j].backward()
