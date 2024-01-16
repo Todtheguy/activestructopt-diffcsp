@@ -11,10 +11,6 @@ from matdeeplearn.preprocessor.helpers import (
 def reduced_one_hot(Z):
   return torch.transpose(Z == torch.transpose(torch.unique(Z).repeat((Z.size()[0], 1)), 0, 1), 0, 1).float()
 
-class ActiveData(Data):
-  def __len__(self) -> int:
-    return 1
-
 def prepare_data(
     structure, 
     config,
@@ -30,7 +26,7 @@ def prepare_data(
     edge_dim = config['preprocess_params']['edge_dim']
     
     # based on https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/preprocessor/processor.py
-    data = ActiveData()
+    data = Data()
     adaptor = AseAtomsAdaptor()
     ase_crystal = adaptor.get_atoms(structure)
     data.batch = torch.zeros(len(structure), device = device, dtype = torch.long)
