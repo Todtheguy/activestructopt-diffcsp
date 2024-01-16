@@ -69,17 +69,17 @@ class Ensemble:
     prediction = vmap(fmodel, in_dims = (0, 0, None))(
       self.params, self.buffers, data)
 
-    mean = torch.mean(prediction, dim = 0)[0]
+    mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
     # https://github.com/pytorch/pytorch/issues/1082
-    std = self.scalar * torch.std(prediction, dim = 0)[0] * np.sqrt(
+    std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
       (self.k - 1) / self.k)
 
-    return mean, std
+    return torch.stack(mean, std)
 
   def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
-    test_res = [self.predict(s, prepared = True) for s in test_data]
+    test_res = self.predict(test_data, prepared = True)
     zscores = []
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
