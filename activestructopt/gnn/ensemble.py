@@ -76,7 +76,7 @@ class Ensemble:
     std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
       (self.k - 1) / self.k)
 
-    return torch.stack(mean, std)
+    return torch.stack((mean, std))
 
   def set_scalar_calibration(self, test_data, test_targets):
     self.scalar = 1.0
