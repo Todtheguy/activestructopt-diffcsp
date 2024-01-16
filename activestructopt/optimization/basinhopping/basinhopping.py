@@ -7,7 +7,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
-  best_ucb = torch.tensor([float('inf')]), device = device)
+  best_ucb = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
   data = [prepare_data(s, config, pos_grad = True).to(device) for s in starting_structures]
