@@ -29,7 +29,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     if i != niters - 1:
       for j in range(nstarts):
         ucbs[j].backward()
-        print(data[j].grad)
+        print(data[j].pos.grad)
       optimizer.step()
     if (torch.min(ucbs) < best_ucb).item():
       best_ucb = torch.min(ucbs).detach()
