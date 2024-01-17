@@ -45,6 +45,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
 
       ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
       ucb.backward()
+      data[j].pos = data[j].pos.detach()
       ucbs[j] = ucb.detach()
       yhat, s = yhat.detach(), s.detach()
       del ucb, yhat, s
