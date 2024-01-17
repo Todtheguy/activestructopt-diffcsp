@@ -63,8 +63,6 @@ def basinhop(ensemble, starting_structures, target, config,
                   nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
-  ucbs = np.zeros((nhops))
-  xs = np.zeros((nhops, 3 * len(starting_structures[0])))
   ljrmins = torch.tensor(lj_rmins, device = device)
 
   new_x = run_adam(ensemble, target, starting_structures, 
