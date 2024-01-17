@@ -48,9 +48,9 @@ def prepare_data(
             n_neighbors,
             num_offsets,
             ["_"],
-            data.cell,
-            data.pos,
-            data.z,
+            data.cell.to('cpu'),
+            data.pos.to('cpu'),
+            data.z.to('cpu'),
         ) 
                                               
         data.edge_index = edge_gen_out["edge_index"]
