@@ -1,7 +1,10 @@
 import torch
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data
-from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion, lj_reject
+from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
+from matdeeplearn.preprocessor.helpers import (
+    calculate_edges_master,
+)
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
@@ -25,11 +28,24 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       yhat = torch.mean((predictions[1, j] ** 2) + ((target - predictions[0, j]) ** 2))
       s = torch.sqrt(2 * torch.sum((predictions[1, j] ** 4) + 2 * (predictions[1, j] ** 2) * (
         (target - predictions[0, j]) ** 2))) / (len(target))
+
+      edge_gen_out = calculate_edges_master(
+        config['preprocess_params']['edge_calc_method'],
+        config['preprocess_params']['cutoff_radius'],
+        config['preprocess_params']['n_neighbors'],
+        config['preprocess_params']['num_offsets'],
+        ["_"],
+        data[j].cell,
+        data[j].pos,
+        data[j].z,
+      )
+      data[j].edge_index = edge_gen_out["edge_index"]
+      data[j].edge_weight = edge_gen_out["edge_weights"]
+
       ucbs[j] = yhat - λ * s + lj_repulsion(data[j], ljrmins)
     if i != niters - 1:
       for j in range(nstarts):
         ucbs[j].backward()
-        print(data[j].pos.grad)
       optimizer.step()
     if (torch.min(ucbs) < best_ucb).item():
       best_ucb = torch.min(ucbs).detach()
