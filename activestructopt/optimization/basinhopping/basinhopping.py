@@ -25,9 +25,9 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     predictions = ensemble.predict(data, prepared = True)
     ucbs = torch.zeros(nstarts)
     for j in range(nstarts):
-      yhat = torch.mean((predictions[1, j] ** 2) + ((target - predictions[0, j]) ** 2))
-      s = torch.sqrt(2 * torch.sum((predictions[1, j] ** 4) + 2 * (predictions[1, j] ** 2) * (
-        (target - predictions[0, j]) ** 2))) / (len(target))
+      yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
+      s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
+        (target - predictions[0][j]) ** 2))) / (len(target))
 
       edge_gen_out = calculate_edges_master(
         config['preprocess_params']['edge_calc_method'],
