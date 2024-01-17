@@ -31,7 +31,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
 
       edge_gen_out = calculate_edges_master(
         config['preprocess_params']['edge_calc_method'],
-        config['preprocess_params']['cutoff_radius'],
+        np.max(lj_repulsion),
         config['preprocess_params']['n_neighbors'],
         config['preprocess_params']['num_offsets'],
         ["_"],
