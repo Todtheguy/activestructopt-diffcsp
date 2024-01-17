@@ -44,7 +44,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       data[j].edge_weight = edge_gen_out["edge_weights"].to(device)
 
       ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-      ucb.backward()
+      ucb.backward(retain_graph = True)
 
       predictions[0][j] = torch.zeros(predictions[0][j].size())
       predictions[1][j] = torch.zeros(predictions[1][j].size())
