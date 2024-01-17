@@ -10,6 +10,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
+  rmax = torch.max(lj_repulsion).item()
   best_ucb = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
@@ -31,7 +32,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
 
       edge_gen_out = calculate_edges_master(
         config['preprocess_params']['edge_calc_method'],
-        np.max(lj_repulsion),
+        rmax,
         config['preprocess_params']['n_neighbors'],
         config['preprocess_params']['num_offsets'],
         ["_"],
