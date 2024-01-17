@@ -38,6 +38,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
         data[j].cell,
         data[j].pos,
         data[j].z,
+        device = device,
       )
       data[j].edge_index = edge_gen_out["edge_index"].to(device)
       data[j].edge_weight = edge_gen_out["edge_weights"].to(device)
