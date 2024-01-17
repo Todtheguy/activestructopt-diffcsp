@@ -46,7 +46,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       ucbs[j] = yhat - λ * s + lj_repulsion(data[j], ljrmins)
     if i != niters - 1:
       for j in range(nstarts):
-        ucbs[j].backward()
+        ucbs[j].backward(retain_graph = True)
       optimizer.step()
     if (torch.min(ucbs) < best_ucb).item():
       best_ucb = torch.min(ucbs).detach()
