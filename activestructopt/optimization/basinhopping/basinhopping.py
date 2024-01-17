@@ -51,9 +51,9 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     if (torch.min(ucbs) < best_ucb).item():
       best_ucb = torch.min(ucbs).detach()
       best_x = data[torch.argmin(ucbs).item()].pos.detach().flatten()
-    yhat, s, mean, std, ucbs = yhat.detach(), s.detach(
-      ), mean.detach(), std.detach(), ucbs.detach()
-    del yhat, s, mean, std, ucbs
+    yhat, s, predictions, ucbs = yhat.detach(), s.detach(
+      ), predictions.detach(), ucbs.detach()
+    del yhat, s, predictions, ucbs
     
   to_return = best_x.detach().cpu().numpy() 
   del best_ucb, best_x, target, data
