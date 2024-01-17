@@ -44,7 +44,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       data[j].edge_weight = edge_gen_out["edge_weights"].to(device)
 
       ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-      ucb.backward(return_graph = True)
+      ucb.backward(retain_graph = True)
       ucbs[j] = ucb.detach()
       yhat, s = yhat.detach(), s.detach()
       del ucb, yhat, s
