@@ -11,6 +11,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
   rmax = torch.max(ljrmins).item()
+  print(rmax)
   best_ucb = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
