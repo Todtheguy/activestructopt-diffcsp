@@ -44,9 +44,10 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       data[j].edge_weight = edge_gen_out["edge_weights"].to(device)
 
       ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-      ucb.backward()
+      ucb.backward(return_graph = True)
       ucbs[j] = ucb.detach()
-      del ucb
+      yhat, s = yhat.detach(), s.detach()
+      del ucb, yhat, s
     if i != niters - 1:
       optimizer.step()
     if (torch.min(ucbs) < best_ucb).item():
