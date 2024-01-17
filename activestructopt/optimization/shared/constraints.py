@@ -11,8 +11,6 @@ def get_z(site):
   return np.argmax(el_symbols == site.species.elements[0].symbol)
 
 def lj_repulsion(data, ljrmins, scale = 400):
-  print(data.z)
-  print(data.edge_index)
   rmins = ljrmins[(data.z[data.edge_index[0]] - 1), 
     (data.z[data.edge_index[1]] - 1)]
   repulsions = torch.where(rmins <= data.edge_weight, 
