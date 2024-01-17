@@ -39,8 +39,8 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
         data[j].pos,
         data[j].z,
       )
-      data[j].edge_index = edge_gen_out["edge_index"]
-      data[j].edge_weight = edge_gen_out["edge_weights"]
+      data[j].edge_index = edge_gen_out["edge_index"].to(device)
+      data[j].edge_weight = edge_gen_out["edge_weights"].to(device)
 
       ucbs[j] = yhat - λ * s + lj_repulsion(data[j], ljrmins)
     if i != niters - 1:
