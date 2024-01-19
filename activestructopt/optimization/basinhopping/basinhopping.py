@@ -7,13 +7,15 @@ from matdeeplearn.preprocessor.helpers import (
 )
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
-                    niters = 100, λ = 1.0, lr = 0.01, device = 'cpu', rmax = 8.0):
+                    niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
   best_ucb = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
   data = [prepare_data(s, config, pos_grad = True).to(device) for s in starting_structures]
+  combos = torch.combinations(data[0].z - 1, with_replacement=True)
+  rmax = torch.max(ljrmins[combos[:, 0], combos[:, 1]])
   for i in range(nstarts):
     data[i].pos = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
         starting_structures[i].frac_coords), device = device, dtype = torch.float)
@@ -69,10 +71,9 @@ def basinhop(ensemble, starting_structures, target, config,
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
   ljrmins = torch.tensor(lj_rmins, device = device)
-  rmax = np.nanmax(lj_rmins)
 
   new_x = run_adam(ensemble, target, starting_structures, config, ljrmins, 
-    niters = niters, λ = λ, lr = lr, device = device, rmax = rmax)
+    niters = niters, λ = λ, lr = lr, device = device)
   
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):
