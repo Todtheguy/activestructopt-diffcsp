@@ -8,18 +8,42 @@ import torch
 from torch.func import stack_module_state, functional_call, vmap
 import copy
 from torch_geometric.loader import DataLoader
+from matdeeplearn.trainers.base_trainer import BaseTrainer
 
 class Runner:
   def __init__(self):
     self.config = None
 
-  def __call__(self, config, args):
+  def __call__(self, config, args, train_data, val_data):
     with new_trainer_context(args = args, config = config) as ctx:
-        self.config = ctx.config
-        self.task = ctx.task
-        self.trainer = ctx.trainer
-        self.task.setup(self.trainer)
-        self.task.run()
+      if config["task"]["parallel"] == True:
+        local_world_size = os.environ.get("LOCAL_WORLD_SIZE", None)
+        local_world_size = int(local_world_size)
+        dist.init_process_group(
+          "nccl", world_size=local_world_size, init_method="env://"
+        )
+        rank = int(dist.get_rank())
+      else:
+        rank = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        local_world_size = 1
+      self.config = ctx.config
+      self.task = ctx.task
+      self.trainer = ctx.trainer
+      self.trainer.dataset = {
+        'train': train_data, 
+        'val': val_data, 
+      }
+      self.trainer.sampler = BaseTrainer._load_sampler(config["optim"], self.trainer.dataset, local_world_size, rank)
+      self.trainer.data_loader = BaseTrainer._load_dataloader(
+        config["optim"],
+        config["dataset"],
+        self.trainer.dataset,
+        self.trainer.sampler,
+        config["task"]["run_mode"],
+        config["model"]
+      )
+      self.task.setup(self.trainer)
+      self.task.run()
 
   def checkpoint(self, *args, **kwargs):
     self.trainer.save(checkpoint_file="checkpoint.pt", training_state=True)
@@ -31,10 +55,6 @@ class ConfigSetup:
       self.run_mode = run_mode
       self.seed = None
       self.submit = None
-      self.datasets = {
-        'train': train_data, 
-        'val': val_data, 
-      }
 
 class Ensemble:
   def __init__(self, k, config, datasets):
@@ -48,7 +68,7 @@ class Ensemble:
   def train(self):
     for i in range(self.k):
       self.ensemble[i](self.config, 
-        ConfigSetup('train', self.datasets[i][0], self.datasets[i][1]))
+        ConfigSetup('train'), self.datasets[i][0], self.datasets[i][1])
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
