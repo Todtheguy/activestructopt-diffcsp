@@ -59,6 +59,7 @@ def reprocess_data(data, config, device):
         data.cell,
         data.pos,
         data.z,
+        device = device
       ) 
                                               
       data.edge_index = edge_gen_out["edge_index"]
