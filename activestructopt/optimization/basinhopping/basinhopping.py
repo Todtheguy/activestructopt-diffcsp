@@ -44,7 +44,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     ucb = ucb.detach()
     yhat = yhat.detach()
     s = s.detach()
-    del predictions, ucbs, ucb, yhat, s, edge_gen_out
+    del predictions, ucbs, ucb, yhat, s
     
   to_return = best_x.detach().cpu().numpy() 
   del best_ucb, best_x, target, data
