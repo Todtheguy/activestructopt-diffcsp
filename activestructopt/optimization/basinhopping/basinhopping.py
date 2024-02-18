@@ -2,9 +2,7 @@ import torch
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data, reprocess_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
-from matdeeplearn.preprocessor.helpers import (
-    calculate_edges_master,
-)
+from matdeeplearn.preprocessor.helpers import calculate_edges_master
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
@@ -18,33 +16,56 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     data[i].pos = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
         starting_structures[i].frac_coords), device = device, dtype = torch.float)
   optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
+
+  large_structure = False
+  large_structure_tested = False
+
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
       data[j].pos.requires_grad_()
       reprocess_data(data[j], config, device)
-    predictions = ensemble.predict(data, prepared = True)
-    ucbs = torch.zeros(nstarts)
-    ucb_total = torch.tensor([0.0], device = device)
-    for j in range(nstarts):
-      yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
-      s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
-        (target - predictions[0][j]) ** 2))) / (len(target))
-      ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-      ucb_total += ucb
-      ucbs[j] = ucb.detach()
-    ucb_total.backward()
+
+    if not large_structure_tested:
+      try:
+        predictions = ensemble.predict(data, prepared = True)
+      except torch.cuda.OutOfMemoryError:
+        large_structure = True
+      large_structure_tested = True
+    elif not large_structure:
+      predictions = ensemble.predict(data, prepared = True)
+    
+    if not large_structure:
+      ucbs = torch.zeros(nstarts)
+      ucb_total = torch.tensor([0.0], device = device)
+      for j in range(nstarts):
+        yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
+        s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
+          (target - predictions[0][j]) ** 2))) / (len(target))
+        ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+        ucb_total += ucb
+        ucbs[j] = ucb.detach()
+      ucb_total.backward()
+      del predictions, ucb, yhat, s
+    else:
+      ucbs = torch.zeros(nstarts)
+      for j in range(nstarts):
+        predictions = ensemble.predict([data[j]], prepared = True)
+        yhat = torch.mean((predictions[1][0] ** 2) + ((target - predictions[0][0]) ** 2))
+        s = torch.sqrt(2 * torch.sum((predictions[1][0] ** 4) + 2 * (predictions[1][0] ** 2) * (
+          (target - predictions[0][0]) ** 2))) / (len(target))
+        ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+        ucbs[j] = ucb.detach()
+        ucb.backward()
+        del predictions, yhat, s, ucb
+    
     if i != niters - 1:
       optimizer.step()
     if (torch.min(ucbs) < best_ucb).item():
       best_ucb = torch.min(ucbs).detach()
       best_x = data[torch.argmin(ucbs).item()].pos.detach().flatten()
-    predictions = predictions.detach()
-    data[j].pos = data[j].pos.detach()
-    ucb = ucb.detach()
-    yhat = yhat.detach()
-    s = s.detach()
-    del predictions, ucbs, ucb, yhat, s
+    # data[j].pos = data[j].pos.detach()
+    del ucbs
     
   to_return = best_x.detach().cpu().numpy() 
   del best_ucb, best_x, target, data
