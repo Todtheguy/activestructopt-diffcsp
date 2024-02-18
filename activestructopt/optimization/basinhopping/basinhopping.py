@@ -18,7 +18,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
 
   large_structure = False
-  large_structure_tested = False
 
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
@@ -26,28 +25,24 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       data[j].pos.requires_grad_()
       reprocess_data(data[j], config, device)
 
-    if not large_structure_tested:
+    if not large_structure:
       try:
         predictions = ensemble.predict(data, prepared = True)
+        ucbs = torch.zeros(nstarts)
+        ucb_total = torch.tensor([0.0], device = device)
+        for j in range(nstarts):
+          yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
+          s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
+            (target - predictions[0][j]) ** 2))) / (len(target))
+          ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+          ucb_total += ucb
+          ucbs[j] = ucb.detach()
+        ucb_total.backward()
+        del predictions, ucb, yhat, s
       except torch.cuda.OutOfMemoryError:
         large_structure = True
-      large_structure_tested = True
-    elif not large_structure:
-      predictions = ensemble.predict(data, prepared = True)
-    
-    if not large_structure:
-      ucbs = torch.zeros(nstarts)
-      ucb_total = torch.tensor([0.0], device = device)
-      for j in range(nstarts):
-        yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
-        s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
-          (target - predictions[0][j]) ** 2))) / (len(target))
-        ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-        ucb_total += ucb
-        ucbs[j] = ucb.detach()
-      ucb_total.backward()
-      del predictions, ucb, yhat, s
-    else:
+
+    if large_structure:
       ucbs = torch.zeros(nstarts)
       for j in range(nstarts):
         predictions = ensemble.predict([data[j]], prepared = True)
