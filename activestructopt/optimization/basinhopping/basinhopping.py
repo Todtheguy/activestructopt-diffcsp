@@ -35,7 +35,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
             (target - predictions[0][j]) ** 2))) / (len(target))
           ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-          ucb_total += ucb
+          ucb_total = ucb_total + ucb
           ucbs[j] = ucb.detach()
         ucb_total.backward()
         del predictions, ucb, yhat, s
