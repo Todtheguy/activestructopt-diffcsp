@@ -39,6 +39,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           ucb_total = ucb_total + ucb
           ucbs[j] = ucb.detach()
         ucb_total.backward()
+        print("backwards call")
         for j in range(nstarts):
           data[j].detach()
         del predictions, ucb, yhat, s
