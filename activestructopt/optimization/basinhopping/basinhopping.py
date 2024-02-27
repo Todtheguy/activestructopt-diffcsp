@@ -55,6 +55,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
         ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
         ucbs[j] = ucb.detach()
         ucb.backward()
+        data[j].detach()
         del predictions, yhat, s, ucb
     
     if i != niters - 1:
