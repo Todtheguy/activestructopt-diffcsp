@@ -6,7 +6,6 @@ from matdeeplearn.preprocessor.helpers import calculate_edges_master
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
-  torch.autograd.set_detect_anomaly(True)
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
   best_ucb = torch.tensor([float('inf')], device = device)
@@ -39,9 +38,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           ucb_total = ucb_total + ucb
           ucbs[j] = ucb.detach()
         ucb_total.backward()
-        print("backwards call")
-        for j in range(nstarts):
-          data[j].detach()
         del predictions, ucb, yhat, s
       except torch.cuda.OutOfMemoryError:
         large_structure = True
@@ -56,7 +52,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
         ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
         ucbs[j] = ucb.detach()
         ucb.backward()
-        data[j].detach()
         del predictions, yhat, s, ucb
     
     if i != niters - 1:
