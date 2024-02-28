@@ -23,7 +23,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
       data[j].pos.requires_grad_()
-      reprocess_data(data[j], config, device)
+      reprocess_data(data[j], config, device, nodes = False)
 
     if not large_structure:
       try:
