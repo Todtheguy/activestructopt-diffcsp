@@ -13,7 +13,7 @@ def get_z(site):
 def lj_repulsion(data, ljrmins, scale = 400):
   rmins = ljrmins[(data.z[data.edge_index[0]] - 1), 
     (data.z[data.edge_index[1]] - 1)]
-  repulsions = torch.where(rmins <= data.edge_weight, 
+  repulsions = torch.where(rmins > data.edge_weight, 
     torch.pow(rmins / data.edge_weight, 12), 1.0)
   return (torch.mean(repulsions) - 1) / scale
 
