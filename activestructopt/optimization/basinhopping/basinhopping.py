@@ -11,10 +11,11 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   best_ucb = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
-  data = [prepare_data(s, config, pos_grad = True, device = device) for s in starting_structures]
+  data = [prepare_data(s, config, pos_grad = True, device = device, preprocess = False) for s in starting_structures]
   for i in range(nstarts):
-    data[i].pos = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
-        starting_structures[i].frac_coords), device = device, dtype = torch.float)
+    #data[i].pos = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
+    #    starting_structures[i].frac_coords), device = device, dtype = torch.float)
+    reprocess_data(data[i], edges = False)
   optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
 
   large_structure = False
