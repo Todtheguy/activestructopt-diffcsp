@@ -17,6 +17,7 @@ def prepare_data(
     y = None,
     pos_grad = False,
     device = None,
+    preprocess = True,
 ):
     if device == None:
       device = config['dataset_device']
@@ -38,18 +39,19 @@ def prepare_data(
     if pos_grad:
       data.pos.requires_grad_()
 
-    reprocess_data(data, config, device)
+    if preprocess:
+      reprocess_data(data, config, device)
 
     if y is not None:
       data.y = torch.tensor(np.array([y]))
 
     return data
 
-def reprocess_data(data, config, device, nodes = True):
+def reprocess_data(data, config, device, nodes = True, edges = True):
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
 
-    if config['preprocess_params']['preprocess_edges']:
+    if edges and config['preprocess_params']['preprocess_edges']:
       edge_gen_out = calculate_edges_master(
         config['preprocess_params']['edge_calc_method'],
         r,
@@ -71,7 +73,7 @@ def reprocess_data(data, config, device, nodes = True):
       if(data.edge_vec.dim() > 2):
         data.edge_vec = data.edge_vec[data.edge_index[0], data.edge_index[1]] 
 
-    if config['preprocess_params']['preprocess_edge_features']:
+    if edges and config['preprocess_params']['preprocess_edge_features']:
       data.edge_descriptor = {}
       data.edge_descriptor["distance"] = data.edge_weight
       data.distances = data.edge_weight
@@ -80,7 +82,7 @@ def reprocess_data(data, config, device, nodes = True):
       generate_node_features(data, n_neighbors, device=device, 
         node_rep_func = reduced_one_hot)
         
-    if config['preprocess_params']['preprocess_edge_features']:
+    if edges and config['preprocess_params']['preprocess_edge_features']:
       generate_edge_features(data, config['preprocess_params']['edge_dim'], 
         r, device=device)
       if config['preprocess_params']['preprocess_edges']:
