@@ -45,7 +45,7 @@ def prepare_data(
 
     return data
 
-def reprocess_data(data, config, device):
+def reprocess_data(data, config, device, nodes = True):
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
 
@@ -76,7 +76,7 @@ def reprocess_data(data, config, device):
       data.edge_descriptor["distance"] = data.edge_weight
       data.distances = data.edge_weight
 
-    if config['preprocess_params']['preprocess_node_features']:
+    if nodes and config['preprocess_params']['preprocess_node_features']:
       generate_node_features(data, n_neighbors, device=device, 
         node_rep_func = reduced_one_hot)
         
