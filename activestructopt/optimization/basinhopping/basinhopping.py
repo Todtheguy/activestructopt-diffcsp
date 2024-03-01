@@ -25,6 +25,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     print(i)
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
+      print(data)
       data[j].pos.requires_grad_()
       reprocess_data(data[j], config, device, nodes = False)
 
