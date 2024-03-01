@@ -56,8 +56,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           ucb_total = ucb_total + ucb
           ucbs[j] = ucb.clone().detach()
         for j in range(nstarts):
-          data[j].pos.requires_grad_()
-          reprocess_data(data[j], config, device, nodes = False)
           print("{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
             data[j].batch._version,
             data[j].n_atoms._version,
