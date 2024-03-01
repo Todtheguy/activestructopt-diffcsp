@@ -30,16 +30,17 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
 
     if not large_structure:
       try:
-        predictions = ensemble.predict(data, prepared = True)
-        ucbs = torch.zeros(nstarts)
-        ucb_total = torch.tensor([0.0], device = device)
-        for j in range(1):
-          yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
-          s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
-            (target - predictions[0][j]) ** 2))) / (len(target))
-          ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
-          ucb_total = ucb_total + ucb
-          #ucbs[j] = ucb.clone().detach()
+        #predictions = ensemble.predict(data, prepared = True)
+        #ucbs = torch.zeros(nstarts)
+        #ucb_total = torch.tensor([0.0], device = device)
+        #for j in range(1):
+        #yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
+        #s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
+        #  (target - predictions[0][j]) ** 2))) / (len(target))
+        #ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+        ucb = lj_repulsion(data[j], ljrmins)
+        #ucb_total = ucb_total + ucb
+        #ucbs[j] = ucb.clone().detach()
         ucb.backward()
         del predictions, ucb, yhat, s
       except torch.cuda.OutOfMemoryError:
