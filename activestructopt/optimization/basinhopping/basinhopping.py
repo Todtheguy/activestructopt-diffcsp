@@ -25,6 +25,8 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     print(i)
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
+      data[j].pos.requires_grad_()
+      reprocess_data(data[j], config, device, nodes = False)
       print(data[j].batch)
       print(data[j].n_atoms)
       print(data[j].cell)
@@ -41,9 +43,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       print(data[j].distances)
       print(data[j].edge_attr)
 
-      data[j].pos.requires_grad_()
-      reprocess_data(data[j], config, device, nodes = False)
-
     if not large_structure:
       try:
         predictions = ensemble.predict(data, prepared = True)
@@ -55,7 +54,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
             (target - predictions[0][j]) ** 2))) / (len(target))
           ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
           ucb_total = ucb_total + ucb
-          ucbs[j] = ucb.detach()
+          ucbs[j] = ucb.clone().detach()
         ucb_total.backward()
         del predictions, ucb, yhat, s
       except torch.cuda.OutOfMemoryError:
