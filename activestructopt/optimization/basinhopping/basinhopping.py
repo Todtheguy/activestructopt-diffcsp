@@ -6,6 +6,7 @@ from matdeeplearn.preprocessor.helpers import calculate_edges_master
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
+  torch.autograd.set_detect_anomaly(True)
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
   best_ucb = torch.tensor([float('inf')], device = device)
@@ -21,6 +22,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   large_structure = False
 
   for i in range(niters):
+    print(i)
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
       data[j].pos.requires_grad_()
