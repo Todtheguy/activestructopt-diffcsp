@@ -27,21 +27,6 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     for j in range(nstarts):
       data[j].pos.requires_grad_()
       reprocess_data(data[j], config, device, nodes = False)
-      print("{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
-        data[j].batch._version,
-        data[j].n_atoms._version,
-        data[j].cell._version,
-        data[j].z._version,
-        data[j].u._version,
-        data[j].pos._version,
-        data[j].x._version,
-        data[j].edge_index._version,
-        data[j].edge_weight._version,
-        data[j].cell_offsets._version,
-        data[j].neighbors._version,
-        data[j].distances._version,
-        data[j].edge_attr._version,
-        ))
 
     if not large_structure:
       try:
@@ -52,25 +37,9 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           yhat = torch.mean((predictions[1][j] ** 2) + ((target - predictions[0][j]) ** 2))
           s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (predictions[1][j] ** 2) * (
             (target - predictions[0][j]) ** 2))) / (len(target))
-          ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+          ucb = yhat - λ * s# + lj_repulsion(data[j], ljrmins)
           ucb_total = ucb_total + ucb
           ucbs[j] = ucb.clone().detach()
-        for j in range(nstarts):
-          print("{} {} {} {} {} {} {} {} {} {} {} {} {}".format(
-            data[j].batch._version,
-            data[j].n_atoms._version,
-            data[j].cell._version,
-            data[j].z._version,
-            data[j].u._version,
-            data[j].pos._version,
-            data[j].x._version,
-            data[j].edge_index._version,
-            data[j].edge_weight._version,
-            data[j].cell_offsets._version,
-            data[j].neighbors._version,
-            data[j].distances._version,
-            data[j].edge_attr._version,
-            ))
         ucb_total.backward()
         del predictions, ucb, yhat, s
       except torch.cuda.OutOfMemoryError:
