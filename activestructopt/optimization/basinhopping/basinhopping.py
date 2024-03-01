@@ -25,7 +25,22 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     print(i)
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
-      print(data)
+      print(data[j].batch)
+      print(data[j].n_atoms)
+      print(data[j].cell)
+      print(data[j].z)
+      print(data[j].u)
+      print(data[j].pos)
+      print(data[j].x)
+      print(data[j].edge_index)
+      print(data[j].edge_vec)
+      print(data[j].edge_index)
+      print(data[j].edge_weight)
+      print(data[j].cell_offsets)
+      print(data[j].neighbors)
+      print(data[j].distances)
+      print(data[j].edge_attr)
+
       data[j].pos.requires_grad_()
       reprocess_data(data[j], config, device, nodes = False)
 
