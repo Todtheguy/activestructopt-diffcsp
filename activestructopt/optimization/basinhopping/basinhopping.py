@@ -22,9 +22,9 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   optimizer = torch.optim.Adam([data[0].pos], lr=lr)
   optimizer.zero_grad(set_to_none=True)
   data[0].pos.requires_grad_()
-  ucb = torch.sum(data[0].pos)
-  ucb.backward()
-  assert False
+  #ucb = torch.sum(data[0].pos)
+  #ucb.backward()
+  #assert False
                       
   r = config['preprocess_params']['cutoff_radius']
   n_neighbors = config['preprocess_params']['n_neighbors']
