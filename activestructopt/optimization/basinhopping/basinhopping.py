@@ -16,7 +16,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   for i in range(nstarts):
     #data[i].pos = torch.tensor(starting_structures[i].lattice.get_cartesian_coords(
     #    starting_structures[i].frac_coords), device = device, dtype = torch.float)
-    reprocess_data(data[i], config, device, edges = False)
+    reprocess_data_for_opt_check(data[i], config, device, edges = False)
   optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
 
   large_structure = False
@@ -26,7 +26,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
       data[j].pos.requires_grad_()
-      reprocess_data(data[j], config, device, nodes = False)
+      reprocess_data_for_opt_check(data[j], config, device, nodes = False)
 
     if not large_structure:
       try:
