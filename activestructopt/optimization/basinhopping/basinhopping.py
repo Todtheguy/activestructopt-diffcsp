@@ -29,7 +29,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       r = config['preprocess_params']['cutoff_radius']
       n_neighbors = config['preprocess_params']['n_neighbors']
   
-      if edges and config['preprocess_params']['preprocess_edges']:
+      if config['preprocess_params']['preprocess_edges']:
         edge_gen_out = calculate_edges_master(
           config['preprocess_params']['edge_calc_method'],
           r,
