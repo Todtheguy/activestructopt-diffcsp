@@ -37,7 +37,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     ) 
 
     ucb = torch.sum(edge_gen_out["edge_weights"])
-    ucb.backward()
+    ucb.backward(retain_graph=True)
     assert False
 
   large_structure = False
