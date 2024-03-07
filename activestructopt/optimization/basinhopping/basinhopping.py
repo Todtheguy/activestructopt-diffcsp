@@ -41,6 +41,9 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           data[j].z,
           device = device
         ) 
+
+        ucb = torch.sum(edge_gen_out["edge_weights"])
+        ucb.backward()
                                                 
         data[j].edge_index = edge_gen_out["edge_index"]
         data[j].edge_vec = edge_gen_out["edge_vec"]
