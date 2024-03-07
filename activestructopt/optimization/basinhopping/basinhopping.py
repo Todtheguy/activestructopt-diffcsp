@@ -26,7 +26,30 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
     optimizer.zero_grad(set_to_none=True)
     for j in range(nstarts):
       data[j].pos.requires_grad_()
-      reprocess_data_for_opt_check(data[j], config, device, nodes = False)
+      r = config['preprocess_params']['cutoff_radius']
+      n_neighbors = config['preprocess_params']['n_neighbors']
+  
+      if edges and config['preprocess_params']['preprocess_edges']:
+        edge_gen_out = calculate_edges_master(
+          config['preprocess_params']['edge_calc_method'],
+          r,
+          n_neighbors,
+          config['preprocess_params']['num_offsets'],
+          ["_"],
+          data[j].cell,
+          data[j].pos,
+          data[j].z,
+          device = device
+        ) 
+                                                
+        data[j].edge_index = edge_gen_out["edge_index"]
+        data[j].edge_vec = edge_gen_out["edge_vec"]
+        data[j].edge_weight = edge_gen_out["edge_weights"]
+        data[j].cell_offsets = edge_gen_out["cell_offsets"]
+        data[j].neighbors = edge_gen_out["neighbors"]            
+      
+        if(data[j].edge_vec.dim() > 2):
+          data[j].edge_vec = data[j].edge_vec[data[j].edge_index[0], data[j].edge_index[1]]
 
     if not large_structure:
       try:
