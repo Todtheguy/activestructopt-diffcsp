@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from activestructopt.gnn.dataloader import prepare_data, reprocess_data
+from activestructopt.gnn.dataloader import prepare_data, reprocess_data, reprocess_data_for_opt_check
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
 from matdeeplearn.preprocessor.helpers import calculate_edges_master
 
