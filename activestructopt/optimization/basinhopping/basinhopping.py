@@ -1,5 +1,4 @@
 import torch
-import numpy as np
 from activestructopt.gnn.dataloader import prepare_data, reprocess_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
 
