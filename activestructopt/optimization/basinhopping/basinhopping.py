@@ -14,9 +14,10 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   for i in range(nstarts): # process node features
     reprocess_data(data[i], config, device, edges = False)
                       
-  optimizer = torch.optim.Adam([data[0].pos], lr=lr)
+  optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
   optimizer.zero_grad(set_to_none=True)
-  data[0].pos.requires_grad_()
+  for i in range(nstarts):
+    data[i].pos.requires_grad_()
 
   large_structure = False
 
