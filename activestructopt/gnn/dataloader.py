@@ -47,46 +47,6 @@ def prepare_data(
 
     return data
 
-def reprocess_data_for_opt_check(data, config, device, nodes = True, edges = True):
-    r = config['preprocess_params']['cutoff_radius']
-    n_neighbors = config['preprocess_params']['n_neighbors']
-
-    if edges and config['preprocess_params']['preprocess_edges']:
-      edge_gen_out = calculate_edges_master(
-        config['preprocess_params']['edge_calc_method'],
-        r,
-        n_neighbors,
-        config['preprocess_params']['num_offsets'],
-        ["_"],
-        data.cell,
-        data.pos,
-        data.z,
-        device = device
-      ) 
-                                              
-      data.edge_index = edge_gen_out["edge_index"]
-      data.edge_vec = edge_gen_out["edge_vec"]
-      data.edge_weight = edge_gen_out["edge_weights"]
-      data.cell_offsets = edge_gen_out["cell_offsets"]
-      data.neighbors = edge_gen_out["neighbors"]            
-    
-      if(data.edge_vec.dim() > 2):
-        data.edge_vec = data.edge_vec[data.edge_index[0], data.edge_index[1]] 
-
-    #if edges and config['preprocess_params']['preprocess_edge_features']:
-    #  data.edge_descriptor = {}
-    #  data.edge_descriptor["distance"] = data.edge_weight
-    #  data.distances = data.edge_weight
-
-    #if nodes and config['preprocess_params']['preprocess_node_features']:
-    #  generate_node_features(data, n_neighbors, device=device)
-        
-    #if edges and config['preprocess_params']['preprocess_edge_features']:
-    #  generate_edge_features(data, config['preprocess_params']['edge_dim'], 
-    #    r, device=device)
-    #  if config['preprocess_params']['preprocess_edges']:
-    #    delattr(data, "edge_descriptor")
-
 def reprocess_data(data, config, device, nodes = True, edges = True):
     r = config['preprocess_params']['cutoff_radius']
     n_neighbors = config['preprocess_params']['n_neighbors']
