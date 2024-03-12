@@ -33,7 +33,7 @@ def lj_repulsion_pymatgen(structure, scale = 400):
 def lj_reject(structure):
   for i in range(len(structure)):
     for j in range(i + 1, len(structure)):
-      if structure.sites[i].distance(structure.sites[j]) < lj_rmins[get_z(
+      if structure.sites[i].distance(structure.sites[j]) >= lj_rmins[get_z(
         structure.sites[i]) - 1][get_z(structure.sites[j]) - 1]:
         return True
   return False
