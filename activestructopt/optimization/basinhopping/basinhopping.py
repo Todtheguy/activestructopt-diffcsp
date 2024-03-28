@@ -1,76 +1,83 @@
 import torch
-import numpy as np
-from activestructopt.gnn.dataloader import prepare_data
-from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion, lj_reject
+from activestructopt.gnn.dataloader import prepare_data, reprocess_data
+from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
 
-def run_adam(ensemble, target, x0, starting_structure, config, ljrmins,
+def run_adam(ensemble, target, starting_structures, config, ljrmins,
                     niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
-  ucbs = torch.zeros(niters, device = device)
-  xs = torch.zeros((niters, 3 * x0.size()[0]), device = device)
+  nstarts = len(starting_structures)
+  natoms = len(starting_structures[0])
+  best_ucb = torch.tensor([float('inf')], device = device)
+  best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
-  data = prepare_data(starting_structure, config, pos_grad = True).to(device)
-  data.pos = x0
-  optimizer = torch.optim.Adam([data.pos], lr=lr)
+  data = [prepare_data(s, config, pos_grad = True, device = device, 
+    preprocess = False) for s in starting_structures]
+  for i in range(nstarts): # process node features
+    reprocess_data(data[i], config, device, edges = False)
+                      
+  optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
+  
+  large_structure = False
+
   for i in range(niters):
     optimizer.zero_grad(set_to_none=True)
-    data.pos.requires_grad_()
-    prediction = ensemble.ensemble[0].trainer.model._forward(data)
-    for j in range(1, ensemble.k):
-      prediction = torch.cat((prediction,
-                ensemble.ensemble[j].trainer.model._forward(data)), dim = 0)
-    mean = torch.mean(prediction, dim = 0)
-    # last term to remove Bessel correction and match numpy behavior
-    # https://github.com/pytorch/pytorch/issues/1082
-    std = ensemble.scalar * torch.std(prediction, dim = 0) * np.sqrt(
-      (ensemble.k - 1) / ensemble.k)
-    yhat = torch.mean((std ** 2) + ((target - mean) ** 2))
-    s = torch.sqrt(2 * torch.sum((std ** 4) + 2 * (std ** 2) * (
-      (target - mean) ** 2))) / (len(target))
-    ucb = yhat - λ * s + lj_repulsion(data, ljrmins)
-    if i != niters - 1:
-      ucb.backward()
-      optimizer.step()
-    xs[i] = data.pos.detach().flatten()
-    ucbs[i] = ucb.detach().item()
-    yhat, s, mean, std, prediction, ucb = yhat.detach(), s.detach(
-      ), mean.detach(), std.detach(), prediction.detach(), ucb.detach()
-    del yhat, s, mean, std, prediction, ucb
+    for j in range(nstarts):
+      data[j].pos.requires_grad_()
+      reprocess_data(data[j], config, device, nodes = False)
+
+    if not large_structure:
+      try:
+        predictions = ensemble.predict(data, prepared = True)
+        ucbs = torch.zeros(nstarts)
+        ucb_total = torch.tensor([0.0], device = device)
+        for j in range(nstarts):
+          yhat = torch.mean((predictions[1][j] ** 2) + (
+            (target - predictions[0][j]) ** 2))
+          s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (
+            predictions[1][j] ** 2) * ((target - predictions[0][j]) ** 2))) / (
+            len(target))
+          ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+          ucb_total = ucb_total + ucb
+          ucbs[j] = ucb.detach()
+        ucb_total.backward()
+        del predictions, ucb, yhat, s
+      except torch.cuda.OutOfMemoryError:
+        large_structure = True
+
+    if large_structure:
+      ucbs = torch.zeros(nstarts)
+      for j in range(nstarts):
+        predictions = ensemble.predict([data[j]], prepared = True)
+        yhat = torch.mean((predictions[1][0] ** 2) + (
+          (target - predictions[0][0]) ** 2))
+        s = torch.sqrt(2 * torch.sum((predictions[1][0] ** 4) + 2 * (
+          predictions[1][0] ** 2) * ((target - predictions[0][0]) ** 2))) / (
+          len(target))
+        ucb = yhat - λ * s + lj_repulsion(data[j], ljrmins)
+        ucbs[j] = ucb.detach()
+        ucb.backward()
+        del predictions, yhat, s, ucb
     
-  to_return = ucbs.detach().cpu().numpy(), xs.detach().cpu().numpy()
-  del ucbs, xs, target, data
+    if i != niters - 1:
+      optimizer.step()
+    if (torch.min(ucbs) < best_ucb).item():
+      best_ucb = torch.min(ucbs).detach()
+      best_x = data[torch.argmin(ucbs).item()].pos.detach().flatten()
+    del ucbs
+    
+  to_return = best_x.detach().cpu().numpy() 
+  del best_ucb, best_x, target, data
   return to_return
 
-def basinhop(ensemble, starting_structure, target, config,
+def basinhop(ensemble, starting_structures, target, config,
                   nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
                   step_size = 0.1, rmcσ = 0.0025):
   device = ensemble.device
-  ucbs = np.zeros((nhops, niters))
-  xs = np.zeros((nhops, niters, 3 * len(starting_structure)))
   ljrmins = torch.tensor(lj_rmins, device = device)
 
-  x0 = torch.tensor(starting_structure.lattice.get_cartesian_coords(
-    starting_structure.frac_coords), device = device, dtype = torch.float)
-
-  for i in range(nhops):
-    new_ucbs, new_xs = run_adam(ensemble, target, x0, starting_structure, 
-      config, ljrmins, niters = niters, λ = λ, lr = lr, device = device)
-    
-    ucbs[i] = new_ucbs
-    xs[i] = new_xs
-    if not i + 1 == nhops:
-      accepted = xs[i][-1] if i == 0 or np.log(np.random.rand()) < (
-        ucbs[i - 1][-1] - ucbs[i][-1]) / (2 * rmcσ ** 2) else accepted
-      rejected = True
-      while rejected:
-        hop = starting_structure.copy()
-        for j in range(len(hop)):
-          hop[j].coords = accepted[(3 * j):(3 * (j + 1))]
-        hop.perturb(step_size)
-        rejected = lj_reject(hop)
-      x0 = torch.tensor(hop.lattice.get_cartesian_coords(hop.frac_coords), 
-        device = device, dtype = torch.float)
-  hop, iteration = np.unravel_index(np.argmin(ucbs), ucbs.shape)
-  new_structure = starting_structure.copy()
+  new_x = run_adam(ensemble, target, starting_structures, config, ljrmins, 
+    niters = niters, λ = λ, lr = lr, device = device)
+  
+  new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):
-    new_structure[i].coords = xs[hop][iteration][(3 * i):(3 * (i + 1))]
+    new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
   return new_structure
