@@ -27,6 +27,7 @@ def active_learning(
     bh_σ = 0.0025,
     print_mses = True,
     save_progress_dir = None,
+    λ = 1.0,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
@@ -53,7 +54,7 @@ def active_learning(
     ensemble.set_scalar_calibration(test_data, test_targets)
     new_structure = basinhop(ensemble, starting_structures, target, 
       config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
-      λ = 0.0 if i == (active_steps - 1) else 1.0, lr = bh_lr, 
+      λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr, 
       step_size = bh_step_size, rmcσ = bh_σ)
     structures.append(new_structure)
     datasets, y = update_datasets(
