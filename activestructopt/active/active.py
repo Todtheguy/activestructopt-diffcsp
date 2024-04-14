@@ -28,6 +28,7 @@ def active_learning(
     print_mses = True,
     save_progress_dir = None,
     λ = 1.0,
+    seed = 0,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
@@ -40,6 +41,7 @@ def active_learning(
     perturbrmax = perturbrmax,
     split = split,
     device = device,
+    seed = seed,
   )
   config['dataset']['preprocess_params']['output_dim'] = len(ys[0])
   mses = [np.mean((y - target) ** 2) for y in ys]

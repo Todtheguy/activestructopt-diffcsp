@@ -4,7 +4,8 @@ import numpy as np
 
 def make_data_splits(initial_structure, optfunc, args, config, 
                       perturbrmin = 0.1, perturbrmax = 1.0, 
-                      N = 100, split = 0.85, k = 5, device = 'cuda'):
+                      N = 100, split = 0.85, k = 5, device = 'cuda', seed = 0):
+  np.random.seed(seed)
   structures = [initial_structure.copy() for _ in range(N)]
   for i in range(1, N):
     rejected = True
