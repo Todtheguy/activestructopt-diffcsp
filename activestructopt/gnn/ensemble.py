@@ -14,36 +14,41 @@ class Runner:
   def __init__(self):
     self.config = None
 
-  def __call__(self, config, args, train_data, val_data):
+  def update_datasets(self, train_data, val_data):
+    self.trainer.dataset = {
+      'train': train_data, 
+      'val': val_data, 
+    }
+    self.trainer.sampler = BaseTrainer._load_sampler(self.config["optim"], 
+      self.trainer.dataset, self.local_world_size, self.rank)
+    self.trainer.data_loader = BaseTrainer._load_dataloader(
+      self.config["optim"],
+      self.config["dataset"],
+      self.trainer.dataset,
+      self.trainer.sampler,
+      self.config["task"]["run_mode"],
+      self.config["model"]
+    )
+
+  def __call__(self, config, args):
     with new_trainer_context(args = args, config = config) as ctx:
       if config["task"]["parallel"] == True:
         local_world_size = os.environ.get("LOCAL_WORLD_SIZE", None)
-        local_world_size = int(local_world_size)
+        self.local_world_size = int(local_world_size)
         dist.init_process_group(
-          "nccl", world_size=local_world_size, init_method="env://"
+          "nccl", world_size=self.local_world_size, init_method="env://"
         )
-        rank = int(dist.get_rank())
+        self.rank = int(dist.get_rank())
       else:
-        rank = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        local_world_size = 1
+        self.rank = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.local_world_size = 1
       self.config = ctx.config
       self.task = ctx.task
       self.trainer = ctx.trainer
-      self.trainer.dataset = {
-        'train': train_data, 
-        'val': val_data, 
-      }
-      self.trainer.sampler = BaseTrainer._load_sampler(config["optim"], self.trainer.dataset, local_world_size, rank)
-      self.trainer.data_loader = BaseTrainer._load_dataloader(
-        config["optim"],
-        config["dataset"],
-        self.trainer.dataset,
-        self.trainer.sampler,
-        config["task"]["run_mode"],
-        config["model"]
-      )
       self.task.setup(self.trainer)
-      self.task.run()
+  
+  def train(self):
+    self.task.run()
 
   def checkpoint(self, *args, **kwargs):
     self.trainer.save(checkpoint_file="checkpoint.pt", training_state=True)
@@ -57,18 +62,20 @@ class ConfigSetup:
       self.submit = None
 
 class Ensemble:
-  def __init__(self, k, config, datasets):
+  def __init__(self, k, config):
     self.k = k
     self.config = config
-    self.datasets = datasets
     self.ensemble = [Runner() for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
-  
-  def train(self):
     for i in range(self.k):
-      self.ensemble[i](self.config, 
-        ConfigSetup('train'), self.datasets[i][0], self.datasets[i][1])
+      self.ensemble[i](self.config, ConfigSetup('train'))
+  
+  def train(self, datasets, iterations = 500):
+    for i in range(self.k):
+      self.ensemble[i].config['optim']['max_epochs'] = iterations
+      self.ensemble[i].update_datasets(datasets[i][0], datasets[i][1])
+      self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
