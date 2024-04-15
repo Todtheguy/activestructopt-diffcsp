@@ -46,7 +46,6 @@ class Runner:
       self.config = ctx.config
       self.task = ctx.task
       self.trainer = ctx.trainer
-      self.task.setup(self.trainer)
   
   def train(self):
     self.task.run()
@@ -75,7 +74,9 @@ class Ensemble:
   def train(self, datasets, iterations = 500):
     for i in range(self.k):
       self.ensemble[i].config['optim']['max_epochs'] = iterations
+      self.ensemble[i].trainer.model[0].train()
       self.ensemble[i].update_datasets(datasets[i][0], datasets[i][1])
+      self.ensemble[i].task.setup(self.ensemble[i].trainer)
       self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
