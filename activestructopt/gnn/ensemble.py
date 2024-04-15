@@ -20,7 +20,7 @@ class Runner:
       'val': val_data, 
     }
     self.trainer.sampler = BaseTrainer._load_sampler(self.config["optim"], 
-      self.trainer.dataset, self.local_world_size, self.rank)
+      self.trainer.dataset, self.local_world_size, self.rank2)
     self.trainer.data_loader = BaseTrainer._load_dataloader(
       self.config["optim"],
       self.config["dataset"],
@@ -38,9 +38,9 @@ class Runner:
         dist.init_process_group(
           "nccl", world_size=self.local_world_size, init_method="env://"
         )
-        self.rank = int(dist.get_rank())
+        self.rank2 = int(dist.get_rank())
       else:
-        self.rank = torch.device("cuda") if torch.cuda.is_available() else "cpu"
+        self.rank2 = torch.device("cuda") if torch.cuda.is_available() else "cpu"
         self.local_world_size = 1
       self.config = ctx.config
       self.task = ctx.task
