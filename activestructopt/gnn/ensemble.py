@@ -73,6 +73,12 @@ class Ensemble:
   
   def train(self, datasets, iterations = 500):
     for i in range(self.k):
+      self.ensemble[i].trainer.epoch = 0
+      self.ensemble[i].trainer.step = 0
+      self.ensemble[i].trainer.epoch_time = None
+      self.ensemble[i].trainer.metrics = [{} for _ in range(len(self.model))]  
+      self.ensemble[i].trainer.best_metric = [1e10 for _ in range(len(self.model))]
+      self.ensemble[i].trainer.best_model_state = [None for _ in range(len(self.model))]
       self.ensemble[i].config['optim']['max_epochs'] = iterations
       self.ensemble[i].trainer.model[0].train()
       self.ensemble[i].update_datasets(datasets[i][0], datasets[i][1])
