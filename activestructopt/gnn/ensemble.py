@@ -14,41 +14,36 @@ class Runner:
   def __init__(self):
     self.config = None
 
-  def update_datasets(self, train_data, val_data):
-    self.trainer.dataset = {
-      'train': train_data, 
-      'val': val_data, 
-    }
-    self.trainer.sampler = BaseTrainer._load_sampler(self.config["optim"], 
-      self.trainer.dataset, self.local_world_size, self.rank2)
-    self.trainer.data_loader = BaseTrainer._load_dataloader(
-      self.config["optim"],
-      self.config["dataset"],
-      self.trainer.dataset,
-      self.trainer.sampler,
-      self.config["task"]["run_mode"],
-      self.config["model"]
-    )
-    self.trainer.rank = self.rank2
-
-  def __call__(self, config, args):
+  def __call__(self, config, args, train_data, val_data):
     with new_trainer_context(args = args, config = config) as ctx:
       if config["task"]["parallel"] == True:
         local_world_size = os.environ.get("LOCAL_WORLD_SIZE", None)
-        self.local_world_size = int(local_world_size)
+        local_world_size = int(local_world_size)
         dist.init_process_group(
-          "nccl", world_size=self.local_world_size, init_method="env://"
+          "nccl", world_size=local_world_size, init_method="env://"
         )
-        self.rank2 = int(dist.get_rank())
+        rank = int(dist.get_rank())
       else:
-        self.rank2 = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.local_world_size = 1
+        rank = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        local_world_size = 1
       self.config = ctx.config
       self.task = ctx.task
       self.trainer = ctx.trainer
-  
-  def train(self):
-    self.task.run()
+      self.trainer.dataset = {
+        'train': train_data, 
+        'val': val_data, 
+      }
+      self.trainer.sampler = BaseTrainer._load_sampler(config["optim"], self.trainer.dataset, local_world_size, rank)
+      self.trainer.data_loader = BaseTrainer._load_dataloader(
+        config["optim"],
+        config["dataset"],
+        self.trainer.dataset,
+        self.trainer.sampler,
+        config["task"]["run_mode"],
+        config["model"]
+      )
+      self.task.setup(self.trainer)
+      self.task.run()
 
   def checkpoint(self, *args, **kwargs):
     self.trainer.save(checkpoint_file="checkpoint.pt", training_state=True)
@@ -62,28 +57,22 @@ class ConfigSetup:
       self.submit = None
 
 class Ensemble:
-  def __init__(self, k, config):
+  def __init__(self, k, config, datasets):
     self.k = k
     self.config = config
-    self.ensemble = [Runner() for _ in range(k)]
+    self.datasets = datasets
+    self.ensemble = [None for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
-    for i in range(self.k):
-      self.ensemble[i](self.config, ConfigSetup('train'))
   
   def train(self, datasets, iterations = 500):
+    self.config['optim']['max_epochs'] = iterations
     for i in range(self.k):
-      self.ensemble[i].trainer.epoch = 0
-      self.ensemble[i].trainer.step = 0
-      self.ensemble[i].trainer.epoch_time = None
-      self.ensemble[i].trainer.metrics = [{}]  
-      self.ensemble[i].trainer.best_metric = [1e10]
-      self.ensemble[i].trainer.best_model_state = [None]
-      self.ensemble[i].config['optim']['max_epochs'] = iterations
-      self.ensemble[i].trainer.model[0].train()
-      self.ensemble[i].update_datasets(datasets[i][0], datasets[i][1])
-      self.ensemble[i].task.setup(self.ensemble[i].trainer)
-      self.ensemble[i].train()
+      new_runner = Runner()(self.config, ConfigSetup('train'), 
+                            datasets[i][0], datasets[i][1])
+      if self.ensemble[i] is not None:
+        new_runner.trainer.model[0].load_state_dict(self.ensemble[i].trainer.model[0].state_dict())
+      self.ensemble[i] = new_runner
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
