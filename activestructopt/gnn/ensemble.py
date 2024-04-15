@@ -67,7 +67,8 @@ class Ensemble:
   def train(self, datasets, iterations = 500):
     self.config['optim']['max_epochs'] = iterations
     for i in range(self.k):
-      new_runner = Runner()(self.config, ConfigSetup('train'), 
+      new_runner = Runner()
+      new_runner(self.config, ConfigSetup('train'), 
                             datasets[i][0], datasets[i][1])
       if self.ensemble[i] is not None:
         new_runner.trainer.model[0].load_state_dict(self.ensemble[i].trainer.model[0].state_dict())
