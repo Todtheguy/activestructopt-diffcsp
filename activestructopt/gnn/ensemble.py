@@ -40,7 +40,7 @@ class Runner:
         )
         self.rank = int(dist.get_rank())
       else:
-        self.rank = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.rank = torch.device("cuda") if torch.cuda.is_available() else "cpu"
         self.local_world_size = 1
       self.config = ctx.config
       self.task = ctx.task
