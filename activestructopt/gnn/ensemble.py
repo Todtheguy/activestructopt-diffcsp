@@ -57,10 +57,9 @@ class ConfigSetup:
       self.submit = None
 
 class Ensemble:
-  def __init__(self, k, config, datasets):
+  def __init__(self, k, config):
     self.k = k
     self.config = config
-    self.datasets = datasets
     self.ensemble = [None for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
