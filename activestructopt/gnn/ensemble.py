@@ -29,6 +29,7 @@ class Runner:
       self.config["task"]["run_mode"],
       self.config["model"]
     )
+    self.trainer.rank = self.rank2
 
   def __call__(self, config, args):
     with new_trainer_context(args = args, config = config) as ctx:
