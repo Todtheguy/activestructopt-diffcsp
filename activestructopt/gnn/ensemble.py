@@ -43,7 +43,9 @@ class Runner:
         config["model"]
       )
       self.task.setup(self.trainer)
-      self.task.run()
+
+  def train(self):
+    self.task.run()
 
   def checkpoint(self, *args, **kwargs):
     self.trainer.save(checkpoint_file="checkpoint.pt", training_state=True)
@@ -73,6 +75,7 @@ class Ensemble:
       if self.ensemble[i] is not None:
         new_runner.trainer.model[0].load_state_dict(self.ensemble[i].trainer.model[0].state_dict())
       self.ensemble[i] = new_runner
+      self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
