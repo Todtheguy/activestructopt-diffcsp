@@ -66,8 +66,9 @@ class Ensemble:
     self.scalar = 1.0
     self.device = 'cpu'
   
-  def train(self, datasets, iterations = 500):
+  def train(self, datasets, iterations = 500, lr = 0.001):
     self.config['optim']['max_epochs'] = iterations
+    self.config['optim']['lr'] = lr
     for i in range(self.k):
       new_runner = Runner()
       new_runner(self.config, ConfigSetup('train'), 
