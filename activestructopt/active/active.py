@@ -30,7 +30,7 @@ def active_learning(
     λ = 1.0,
     seed = 0,
     finetune_epochs = 100,
-    lr_reduction = 10.0,
+    lr_reduction = 1.0,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
