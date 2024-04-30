@@ -43,7 +43,9 @@ class Runner:
         config["model"]
       )
       self.task.setup(self.trainer)
-      self.task.run()
+
+  def train(self):
+    self.task.run()
 
   def checkpoint(self, *args, **kwargs):
     self.trainer.save(checkpoint_file="checkpoint.pt", training_state=True)
@@ -57,18 +59,24 @@ class ConfigSetup:
       self.submit = None
 
 class Ensemble:
-  def __init__(self, k, config, datasets):
+  def __init__(self, k, config):
     self.k = k
     self.config = config
-    self.datasets = datasets
-    self.ensemble = [Runner() for _ in range(k)]
+    self.ensemble = [None for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
   
-  def train(self):
+  def train(self, datasets, iterations = 500, lr = 0.001):
+    self.config['optim']['max_epochs'] = iterations
+    self.config['optim']['lr'] = lr
     for i in range(self.k):
-      self.ensemble[i](self.config, 
-        ConfigSetup('train'), self.datasets[i][0], self.datasets[i][1])
+      new_runner = Runner()
+      new_runner(self.config, ConfigSetup('train'), 
+                            datasets[i][0], datasets[i][1])
+      if self.ensemble[i] is not None:
+        new_runner.trainer.model[0].load_state_dict(self.ensemble[i].trainer.model[0].state_dict())
+      self.ensemble[i] = new_runner
+      self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(

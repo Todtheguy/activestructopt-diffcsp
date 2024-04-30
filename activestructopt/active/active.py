@@ -29,6 +29,8 @@ def active_learning(
     save_progress_dir = None,
     λ = 1.0,
     seed = 0,
+    finetune_epochs = 100,
+    lr_reduction = 1.0,
     ):
   structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
@@ -44,15 +46,17 @@ def active_learning(
     seed = seed,
   )
   config['dataset']['preprocess_params']['output_dim'] = len(ys[0])
+  lr1, lr2 = config['optim']['lr'], config['optim']['lr'] / lr_reduction
   mses = [np.mean((y - target) ** 2) for y in ys]
   if print_mses:
     print(mses)
   active_steps = max_forward_calls - N
+  ensemble = Ensemble(k, config)
   for i in range(active_steps):
     starting_structures = [structures[i].copy() for i in np.random.randint(
       0, len(mses) - 1, bh_starts)]
-    ensemble = Ensemble(k, config, datasets)
-    ensemble.train()
+    ensemble.train(datasets, iterations = config['optim'][
+      'max_epochs'] if i == 0 else finetune_epochs, lr = lr1 if i == 0 else lr2)
     ensemble.set_scalar_calibration(test_data, test_targets)
     new_structure = basinhop(ensemble, starting_structures, target, 
       config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
