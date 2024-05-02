@@ -55,7 +55,7 @@ def active_learning(
   ensemble = Ensemble(k, config)
   for i in range(active_steps):
     starting_structures = [initial_structure.copy() for _ in range(bh_starts)]
-    for i in range(1, N):
+    for i in range(1, bh_starts):
       rejected = True
       while rejected:
         new_structure = initial_structure.copy()
