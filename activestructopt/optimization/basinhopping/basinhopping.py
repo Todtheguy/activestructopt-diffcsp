@@ -34,7 +34,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
           print(starti)
           print(stopi)
-          predictions = ensemble.predict(data[starti:stopi], 
+          predictions = ensemble.predict(data[starti:(stopi+1)], 
             prepared = True)
           ucbs = torch.zeros(stopi - starti + 1)
           ucb_total = torch.tensor([0.0], device = device)
