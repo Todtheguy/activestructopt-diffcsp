@@ -1,6 +1,7 @@
 from activestructopt.optimization.basinhopping.basinhopping import basinhop
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.dataset.dataset import make_data_splits, update_datasets
+from activestructopt.optimization.shared.constraints import lj_reject
 import numpy as np
 import gc
 import torch
@@ -20,8 +21,8 @@ def active_learning(
     perturbrmax = 1.0, 
     split = 1/3, 
     device = 'cuda',
-    bh_starts = 100,
-    bh_iters_per_start = 10,
+    bh_starts = 128,
+    bh_iters_per_start = 100,
     bh_lr = 0.01,
     bh_step_size = 0.1,
     bh_σ = 0.0025,
@@ -53,8 +54,15 @@ def active_learning(
   active_steps = max_forward_calls - N
   ensemble = Ensemble(k, config)
   for i in range(active_steps):
-    starting_structures = [structures[i].copy() for i in np.random.randint(
-      0, len(mses) - 1, bh_starts)]
+    starting_structures = [initial_structure.copy() for _ in range(bh_starts)]
+    for i in range(1, N):
+      rejected = True
+      while rejected:
+        new_structure = initial_structure.copy()
+        new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
+        rejected = lj_reject(new_structure)
+      starting_structures[i] = new_structure.copy()
+
     ensemble.train(datasets, iterations = config['optim'][
       'max_epochs'] if i == 0 else finetune_epochs, lr = lr1 if i == 0 else lr2)
     ensemble.set_scalar_calibration(test_data, test_targets)
