@@ -21,19 +21,17 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   orig_split = split
 
   for i in range(niters):
-    optimizer.zero_grad(set_to_none=True)
-    for j in range(nstarts):
-      data[j].pos.requires_grad_()
-      reprocess_data(data[j], config, device, nodes = False)
-
     predicted = False
     while not predicted:
       try:
+        optimizer.zero_grad(set_to_none=True)
+        for j in range(nstarts):
+          data[j].pos.requires_grad_()
+          reprocess_data(data[j], config, device, nodes = False)
+
         for k in range(2 ** (orig_split - split)):
           starti = k * (2 ** split)
           stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
-          print(starti)
-          print(stopi)
           predictions = ensemble.predict(data[starti:(stopi+1)], 
             prepared = True)
           ucbs = torch.zeros(stopi - starti + 1)
