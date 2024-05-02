@@ -55,13 +55,13 @@ def active_learning(
   ensemble = Ensemble(k, config)
   for i in range(active_steps):
     starting_structures = [initial_structure.copy() for _ in range(bh_starts)]
-    for i in range(1, bh_starts):
+    for j in range(bh_starts):
       rejected = True
       while rejected:
         new_structure = initial_structure.copy()
         new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
         rejected = lj_reject(new_structure)
-      starting_structures[i] = new_structure.copy()
+      starting_structures[j] = new_structure.copy()
 
     ensemble.train(datasets, iterations = config['optim'][
       'max_epochs'] if i == 0 else finetune_epochs, lr = lr1 if i == 0 else lr2)
