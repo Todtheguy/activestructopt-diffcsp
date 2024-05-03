@@ -55,7 +55,7 @@ def active_learning(
   ensemble = Ensemble(k, config)
   for i in range(active_steps):
     starting_structures = [initial_structure.copy() for _ in range(bh_starts)]
-    for j in range(np.maximum(len(structures), bh_starts)):
+    for j in range(np.minimum(len(structures), bh_starts)):
       starting_structures[j] = structures[j].copy()
     if len(structures) < bh_starts:
       for j in range(len(structures), bh_starts):
