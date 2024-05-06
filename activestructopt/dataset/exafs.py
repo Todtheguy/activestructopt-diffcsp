@@ -30,7 +30,7 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 	subfolders = [int(x) for x in os.listdir(folder)]
 	new_folder = os.path.join(folder, str(np.max(
 		subfolders) + 1 if len(subfolders) > 0 else 0))
-	os.mkdir(new_folder)
+	os.mkdir(new_folder+ 1)
 	
 	for absorb_ind in absorber_indices:
 		new_abs_folder = os.path.join(new_folder, str(absorb_ind))
@@ -60,9 +60,9 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 			tags = fp.read()
 		with open (os.path.join(new_abs_folder, 'feff.inp'), 'w') as fp:
 			fp.write(tags + '\n' + pot + '\n' + atoms)
-		os.remove('ATOMS')
-		os.remove('POTENTIALS')
-		os.remove('PARAMETERS')
+		os.remove(atoms_loc)
+		os.remove(pot_loc)
+		os.remove(params_loc)
 
 		# run feff.inp
 		os.system(f"cd {new_abs_folder} && {feff_location} feff.inp")
