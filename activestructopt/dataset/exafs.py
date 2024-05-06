@@ -30,7 +30,7 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 	subfolders = [int(x) for x in os.listdir(folder)]
 	new_folder = os.path.join(folder, str(np.max(
 		subfolders) + 1 if len(subfolders) > 0 else 0))
-	os.mkdir(new_folder+ 1)
+	os.mkdir(new_folder)
 	
 	for absorb_ind in absorber_indices:
 		new_abs_folder = os.path.join(new_folder, str(absorb_ind))
