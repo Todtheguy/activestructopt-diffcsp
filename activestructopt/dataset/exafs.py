@@ -14,7 +14,8 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 
 	# guarantees at least two atoms of the absorber,
 	# which is necessary because two different ipots are created
-	structure = structure.make_supercell(2, in_place = False)
+	structure = structure.make_supercell(2)
+	print(structure)
 
 	# get all indices of the absorber
 	absorber_indices = -np.ones(len(absorbers), dtype = np.int64)
