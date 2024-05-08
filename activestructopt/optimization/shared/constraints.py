@@ -10,14 +10,14 @@ el_symbols = np.array([periodictable.elements[i].symbol for i in range(95)])
 def get_z(site):
   return np.argmax(el_symbols == site.species.elements[0].symbol)
 
-def lj_repulsion(data, ljrmins, scale = 400):
+def lj_repulsion(data, ljrmins, scale = 40):
   rmins = ljrmins[(data.z[data.edge_index[0]] - 1), 
     (data.z[data.edge_index[1]] - 1)]
   repulsions = torch.where(rmins > data.edge_weight, 
     torch.pow(rmins / data.edge_weight, 12), 1.0)
   return (torch.mean(repulsions) - 1) / scale
 
-def lj_repulsion_pymatgen(structure, scale = 400):
+def lj_repulsion_pymatgen(structure, scale = 40):
   repulsions = []
   for i in range(len(structure)):
     for j in range(i, len(structure)):
