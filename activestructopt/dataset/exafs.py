@@ -39,9 +39,11 @@ class EXAFSPromise:
 		return np.mean(np.array(chi_ks), axis = 0)
 
 
-def get_EXAFS(structure, feff_location = "", folder = "", 
+def get_EXAFS(struct, feff_location = "", folder = "", 
 	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0):
 	
+	structure = struct.copy()
+
 	# get all indices of the absorber
 	absorber_indices = 8 * np.argwhere(
 		[x.symbol == absorber for x in structure.species]).flatten()
