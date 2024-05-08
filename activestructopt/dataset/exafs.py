@@ -4,9 +4,13 @@ from pymatgen.io.feff.outputs import Xmu
 from pymatgen.core.structure import Structure
 import numpy as np
 import os
+import time
 
 def get_EXAFS(structure, feff_location = "", folder = "", 
 	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0):
+
+	time.sleep(np.random.rand())
+	print("Starting EXAFS")
 	
 	# get all indices of the absorber
 	absorber_indices = 8 * np.argwhere(
