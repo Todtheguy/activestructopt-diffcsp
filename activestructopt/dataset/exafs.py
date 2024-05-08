@@ -58,7 +58,7 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 		os.remove(params_loc)
 
 		# run feff.inp
-		os.system(f"cd {new_abs_folder} && {feff_location} feff.inp")
+		os.system(f"cd {new_abs_folder} && {feff_location} feff.inp > feff_output_log.txt")
 
 		f = open(os.path.join(new_abs_folder, "xmu.dat"), "r")
 		start = 0
