@@ -90,6 +90,7 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 		os.remove(params_loc)
 
 		# run feff.inp and don't wait for the output
-		subprocess.Popen(f"cd {new_abs_folder} && {feff_location} feff.inp &> feff_output_log.txt", shell = True)
+		subprocess.Popen(f"cd {new_abs_folder} && {feff_location} feff.inp", 
+			shell = True, stdout = subprocess.PIPE, stderr=subprocess.STDOUT)
 
 	return EXAFSPromise(new_abs_folder, params, absorber_indices)
