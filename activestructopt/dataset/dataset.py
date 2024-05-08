@@ -1,7 +1,7 @@
 from activestructopt.gnn.dataloader import prepare_data
 from activestructopt.optimization.shared.constraints import lj_reject
 import numpy as np
-import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor
 
 def make_data_splits(initial_structure, optfunc, args, config, 
                       perturbrmin = 0.1, perturbrmax = 1.0, 
@@ -16,8 +16,8 @@ def make_data_splits(initial_structure, optfunc, args, config,
       rejected = lj_reject(new_structure)
     structures[i] = new_structure.copy()
   f = lambda s: optfunc(s, **(args))
-  with mp.Pool(N) as p:
-    ys = p.map(f, structures)
+  with ThreadPoolExecutor(max_workers = N) as executor:
+    ys = list(executor.map(f, structures)) 
   data = [prepare_data(structures[i], config, y = ys[i]).to(device) for i in range(N)]
       
   structure_indices = np.random.permutation(np.arange(1, N))
