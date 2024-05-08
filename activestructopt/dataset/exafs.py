@@ -5,12 +5,42 @@ from pymatgen.core.structure import Structure
 import numpy as np
 import os
 import time
+import subprocess
+
+class EXAFSPromise:
+	def __init__(self, folder, params, inds) -> None:
+		self.folder = folder
+		self.params = params
+		self.inds = inds
+
+	def resolve(self):
+		chi_ks = []
+		for absorb_ind in self.inds:
+			opened = False
+			while not opened:
+				try:
+					f = open(os.path.join(self.folder, "xmu.dat"), "r")
+					opened = True
+				except:
+					time.sleep(10)
+			start = 0
+			i = 0
+			while start == 0:
+				i += 1
+				if f.readline().startswith("#  omega"):
+					start = i
+			f.close()
+
+			xmu = Xmu(self.params.header, feff.inputs.Tags(self.params.tags), 
+				int(absorb_ind), np.genfromtxt(os.path.join(
+				self.folder, "xmu.dat"), skip_header = start))
+			
+			chi_ks.append(xmu.chi)
+		return np.mean(np.array(chi_ks), axis = 0)
+
 
 def get_EXAFS(structure, feff_location = "", folder = "", 
 	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0):
-
-	time.sleep(np.random.rand())
-	print("Starting EXAFS")
 	
 	# get all indices of the absorber
 	absorber_indices = 8 * np.argwhere(
@@ -21,8 +51,6 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 	# guarantees at least two atoms of the absorber,
 	# which is necessary because two different ipots are created
 	structure.make_supercell(2)
-
-	chi_ks = []
 
 	subfolders = [int(x) for x in os.listdir(folder)]
 	new_folder = os.path.join(folder, str(np.max(
@@ -61,24 +89,7 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 		os.remove(pot_loc)
 		os.remove(params_loc)
 
-		# run feff.inp
-		os.system(f"cd {new_abs_folder} && {feff_location} feff.inp > feff_output_log.txt")
+		# run feff.inp and don't wait for the output
+		subprocess.Popen(f"cd {new_abs_folder} && {feff_location} feff.inp &> feff_output_log.txt", shell = True)
 
-		f = open(os.path.join(new_abs_folder, "xmu.dat"), "r")
-		start = 0
-		i = 0
-		while start == 0:
-			i += 1
-			if f.readline().startswith("#  omega"):
-				start = i
-		f.close()
-
-		xmu = Xmu(params.header, feff.inputs.Tags(params.tags), 
-			int(absorb_ind), np.genfromtxt(os.path.join(
-			new_abs_folder, "xmu.dat"), skip_header = start))
-		
-		chi_ks.append(xmu.chi)
-	
-	return np.mean(np.array(chi_ks), axis = 0)
-
-	
+	return EXAFSPromise(new_abs_folder, params, absorber_indices)
