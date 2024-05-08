@@ -6,24 +6,17 @@ import numpy as np
 import os
 
 def get_EXAFS(structure, feff_location = "", folder = "", 
-	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0, ε = 0.001):
-	absorbers = [structure.sites[i] for i in np.argwhere(
-		[x.symbol == absorber for x in structure.species]).flatten()]
+	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0):
+	
+	# get all indices of the absorber
+	absorber_indices = 8 * np.argwhere(
+		[x.symbol == absorber for x in structure.species]).flatten()
 
-	assert len(absorbers) > 0
+	assert len(absorber_indices) > 0
 
 	# guarantees at least two atoms of the absorber,
 	# which is necessary because two different ipots are created
 	structure.make_supercell(2)
-
-	# get all indices of the absorber
-	absorber_indices = -np.ones(len(absorbers), dtype = np.int64)
-	for i in range(len(absorbers)):
-		for j in range(len(structure.sites)):
-			if (abs(absorbers[i].x - structure.sites[j].x) < ε and
-					abs(absorbers[i].y - structure.sites[j].y) < ε and
-					abs(absorbers[i].z - structure.sites[j].z) < ε):
-				absorber_indices[i] = j
 
 	chi_ks = []
 
@@ -77,8 +70,8 @@ def get_EXAFS(structure, feff_location = "", folder = "",
 		f.close()
 
 		xmu = Xmu(params.header, feff.inputs.Tags(params.tags), 
-			int(absorb_ind), np.genfromtxt(os.path.join(new_abs_folder, "xmu.dat"), 
-			skip_header = start))
+			int(absorb_ind), np.genfromtxt(os.path.join(
+			new_abs_folder, "xmu.dat"), skip_header = start))
 		
 		chi_ks.append(xmu.chi)
 	
