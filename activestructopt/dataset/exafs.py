@@ -35,7 +35,7 @@ class EXAFSPromise:
 				int(absorb_ind), np.genfromtxt(os.path.join(
 				self.folder, "xmu.dat"), skip_header = start))
 			
-			chi_ks.append(xmu.chi)
+			chi_ks.append(xmu.chi[60:])
 		return np.mean(np.array(chi_ks), axis = 0)
 
 
