@@ -16,10 +16,11 @@ class EXAFSPromise:
 	def resolve(self):
 		chi_ks = []
 		for absorb_ind in self.inds:
+			new_abs_folder = os.path.join(self.folder, str(absorb_ind))
 			opened = False
 			while not opened:
 				try:
-					f = open(os.path.join(self.folder, "xmu.dat"), "r")
+					f = open(os.path.join(new_abs_folder, "xmu.dat"), "r")
 					opened = True
 				except:
 					time.sleep(10)
@@ -33,7 +34,7 @@ class EXAFSPromise:
 
 			xmu = Xmu(self.params.header, feff.inputs.Tags(self.params.tags), 
 				int(absorb_ind), np.genfromtxt(os.path.join(
-				self.folder, "xmu.dat"), skip_header = start))
+				new_abs_folder, "xmu.dat"), skip_header = start))
 			
 			chi_ks.append(xmu.chi[60:])
 		return np.mean(np.array(chi_ks), axis = 0)
@@ -95,4 +96,4 @@ def get_EXAFS(struct, feff_location = "", folder = "",
 		subprocess.Popen(f"cd {new_abs_folder} && {feff_location} feff.inp", 
 			shell = True)#), stdout = subprocess.PIPE, stderr=subprocess.STDOUT)
 
-	return EXAFSPromise(new_abs_folder, params, absorber_indices)
+	return EXAFSPromise(new_folder, params, absorber_indices)
