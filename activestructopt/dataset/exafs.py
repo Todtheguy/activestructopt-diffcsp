@@ -50,8 +50,6 @@ class EXAFSPromise:
 		else:
 			shutil.rmtree(self.folder)
 
-
-
 def get_EXAFS(struct, feff_location = "", folder = "", 
 	absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0):
 	
