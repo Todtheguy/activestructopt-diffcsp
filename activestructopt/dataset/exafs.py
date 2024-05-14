@@ -1,7 +1,6 @@
 from pymatgen.io import feff
 from pymatgen.io.feff.sets import MPEXAFSSet
 from pymatgen.io.feff.outputs import Xmu
-from pymatgen.core.structure import Structure
 import numpy as np
 import os
 import time
