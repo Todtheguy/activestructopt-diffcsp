@@ -34,9 +34,12 @@ def make_data_splits(initial_structure, optfunc, args, config,
   
   return structures, ys, datasets, kfolds, test_indices, test_data, test_targets
 
-def update_datasets(datasets, new_structure, config, optfunc, args, device):
+def update_datasets(datasets, new_structure, config, optfunc, args, device, 
+  mses, target):
   y_promise = optfunc(new_structure, **(args))
   y = y_promise.resolve()
+  new_mse = np.mean((y - target) ** 2)
+  y_promise.garbage_collect(new_mse <= min(mses))
   new_data = prepare_data(new_structure, config, y = y).to(device)
   fold = len(datasets) - 1
   for i in range(len(datasets) - 1):
@@ -47,4 +50,4 @@ def update_datasets(datasets, new_structure, config, optfunc, args, device):
   for i in range(len(datasets)):
     if fold != i:
       datasets[i][0].append(new_data)
-  return datasets, y
+  return datasets, y, new_mse

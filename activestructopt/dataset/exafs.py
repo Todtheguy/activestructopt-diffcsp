@@ -6,6 +6,7 @@ import numpy as np
 import os
 import time
 import subprocess
+import shutil
 
 class EXAFSPromise:
 	def __init__(self, folder, params, inds) -> None:
@@ -38,6 +39,18 @@ class EXAFSPromise:
 			
 			chi_ks.append(xmu.chi[60:])
 		return np.mean(np.array(chi_ks), axis = 0)
+
+	def garbage_collect(self, is_better):
+		parent_folder = os.path.dirname(self.folder)
+		if is_better:
+			subfolders = [int(x) for x in os.listdir(parent_folder)]
+			for sf in subfolders:
+				to_delete = os.path.join(parent_folder, str(sf))
+				if to_delete != self.folder:
+					shutil.rmtree(to_delete)
+		else:
+			shutil.rmtree(self.folder)
+
 
 
 def get_EXAFS(struct, feff_location = "", folder = "", 

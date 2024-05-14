@@ -74,16 +74,17 @@ def active_learning(
       λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr, 
       step_size = bh_step_size, rmcσ = bh_σ)
     structures.append(new_structure)
-    datasets, y = update_datasets(
+    datasets, y, new_mse = update_datasets(
       datasets,
       new_structure,
       config['dataset'],
       optfunc,
       args,
       device,
+      mses,
+      target,
     )
     ys.append(y)
-    new_mse = np.mean((y - target) ** 2)
     mses.append(new_mse)
     if print_mses:
       print(new_mse)
