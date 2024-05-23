@@ -18,6 +18,7 @@ class EXAFSPromise:
 		self.kmax = kmax
 		self.mask = [x.symbol == self.absorber 
 			for x in initial_structure.species]
+		self.N = len(self.mask)
 
 	def setup_config(self, config):
 		config['dataset']['preprocess_params']['prediction_level'] = 'node'
@@ -87,8 +88,7 @@ class EXAFSPromise:
 				shell = True)#), stdout = subprocess.PIPE, stderr=subprocess.STDOUT)
 		self.folder = new_folder
 		self.params = params
-		self.inds = absorber_indices
-		self.N = len(structure) 
+		self.inds = absorber_indices 
 
 	def resolve(self):
 		chi_ks = np.zeros((self.N, 181))
