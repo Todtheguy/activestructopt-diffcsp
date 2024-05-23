@@ -17,8 +17,8 @@ def make_data_splits(initial_structure, target, optfunc, config,
     structures[i] = new_structure.copy()
 
   y_promises = [copy.deepcopy(optfunc) for _ in structures]
-  for s in structures:
-    y_promises.get(s)
+  for i, s in enumerate(structures):
+    y_promises[i].get(s)
   ys = [yp.resolve() for yp in y_promises]
   data = [prepare_data(structures[i], config, y = ys[i]).to(
     device) for i in range(N)]
