@@ -91,7 +91,7 @@ class EXAFSPromise:
 		self.N = len(structure) 
 
 	def resolve(self):
-		chi_ks = np.zeros(self.N, 181)
+		chi_ks = np.zeros((self.N, 181))
 		for absorb_ind in self.inds:
 			new_abs_folder = os.path.join(self.folder, str(absorb_ind))
 			print(new_abs_folder)
