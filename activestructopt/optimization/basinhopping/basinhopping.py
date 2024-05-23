@@ -4,7 +4,8 @@ from activestructopt.gnn.dataloader import prepare_data, reprocess_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
-                    niters = 100, λ = 1.0, lr = 0.01, device = 'cpu'):
+                    niters = 100, λ = 1.0, lr = 0.01, mask = None, 
+                    device = 'cpu'):
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
   best_ucb = torch.tensor([float('inf')], device = device)
@@ -33,7 +34,7 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           starti = k * (2 ** split)
           stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
           predictions = ensemble.predict(data[starti:(stopi+1)], 
-            prepared = True)
+            prepared = True, mask = mask)
           ucbs = torch.zeros(stopi - starti + 1)
           ucb_total = torch.tensor([0.0], device = device)
           for j in range(stopi - starti + 1):
@@ -65,13 +66,12 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   return to_return
 
 def basinhop(ensemble, starting_structures, target, config,
-                  nhops = 10, niters = 100, λ = 1.0, lr = 0.01, 
-                  step_size = 0.1, rmcσ = 0.0025):
+                  niters = 100, λ = 1.0, lr = 0.01, mask = None):
   device = ensemble.device
   ljrmins = torch.tensor(lj_rmins, device = device)
 
   new_x = run_adam(ensemble, target, starting_structures, config, ljrmins, 
-    niters = niters, λ = λ, lr = lr, device = device)
+    niters = niters, λ = λ, lr = lr, mask = mask, device = device)
   
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):

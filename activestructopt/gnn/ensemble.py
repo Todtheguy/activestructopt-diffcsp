@@ -89,7 +89,7 @@ class Ensemble:
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
 
-  def predict(self, structure, prepared = False):
+  def predict(self, structure, prepared = False, mask = None):
     def fmodel(params, buffers, x):
       return functional_call(self.base_model, (params, buffers), (x,))['output']
     data = structure if prepared else [prepare_data(
@@ -99,21 +99,23 @@ class Ensemble:
 
     print(f"prediction size: {prediction.size()}")
 
+    prediction = torch.mean(prediction[:][torch.tensor(
+      mask, dtype = torch.bool)][:], dim = 1)
+
+    print(f"prediction size: {prediction.size()}")
+
     mean = torch.mean(prediction, dim = 0)
-    print(f"mean size: {mean.size()}")
     # last term to remove Bessel correction and match numpy behavior
     # https://github.com/pytorch/pytorch/issues/1082
     std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
       (self.k - 1) / self.k)
-    print(f"std size: {std.size()}")
-    assert False
 
     return torch.stack((mean, std))
 
-  def set_scalar_calibration(self, test_data, test_targets):
+  def set_scalar_calibration(self, test_data, test_targets, mask = None):
     self.scalar = 1.0
     with torch.inference_mode():
-      test_res = self.predict(test_data, prepared = True)
+      test_res = self.predict(test_data, prepared = True, mask = mask)
     zscores = []
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
