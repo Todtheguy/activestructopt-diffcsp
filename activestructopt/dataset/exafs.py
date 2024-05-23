@@ -94,7 +94,6 @@ class EXAFSPromise:
 		chi_ks = np.zeros((self.N, 181))
 		for absorb_ind in self.inds:
 			new_abs_folder = os.path.join(self.folder, str(absorb_ind))
-			print(new_abs_folder)
 			opened = False
 			while not opened:
 				try:
@@ -102,6 +101,7 @@ class EXAFSPromise:
 					opened = True
 				except:
 					time.sleep(10)
+			time.sleep(10)
 			start = 0
 			i = 0
 			while start == 0:
