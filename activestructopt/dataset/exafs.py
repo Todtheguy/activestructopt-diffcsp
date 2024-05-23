@@ -18,8 +18,6 @@ class EXAFSPromise:
 		self.kmax = kmax
 		self.mask = [x.symbol == self.absorber 
 			for x in initial_structure.species]
-		print(self.mask)
-		assert False
 		self.N = len(self.mask)
 
 	def setup_config(self, config):
