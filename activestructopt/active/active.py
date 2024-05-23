@@ -10,7 +10,6 @@ import sys
 
 def active_learning(
     optfunc, 
-    args, 
     target,
     config, 
     initial_structure, 
@@ -26,17 +25,17 @@ def active_learning(
     bh_lr = 0.01,
     bh_step_size = 0.1,
     bh_σ = 0.0025,
-    print_mses = True,
+    print_mismatches = True,
     save_progress_dir = None,
     λ = 1.0,
     seed = 0,
     finetune_epochs = 500,
     lr_reduction = 1.0,
     ):
-  structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
+  structures, ys, mismatches, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
     initial_structure,
+    target,
     optfunc,
-    args,
     config['dataset'],
     N = N,
     k = k,
@@ -46,11 +45,10 @@ def active_learning(
     device = device,
     seed = seed,
   )
-  config['dataset']['preprocess_params']['output_dim'] = len(ys[0])
+  config = optfunc.setup_config(config, initial_structure)
   lr1, lr2 = config['optim']['lr'], config['optim']['lr'] / lr_reduction
-  mses = [np.mean((y - target) ** 2) for y in ys]
-  if print_mses:
-    print(mses)
+  if print_mismatches:
+    print(mismatches)
   active_steps = max_forward_calls - N
   ensemble = Ensemble(k, config)
   for i in range(active_steps):
@@ -74,20 +72,18 @@ def active_learning(
       λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr, 
       step_size = bh_step_size, rmcσ = bh_σ)
     structures.append(new_structure)
-    datasets, y, new_mse = update_datasets(
+    datasets, ys, mismatches = update_datasets(
       datasets,
       new_structure,
       config['dataset'],
       optfunc,
-      args,
       device,
-      mses,
+      ys,
+      mismatches,
       target,
     )
-    ys.append(y)
-    mses.append(new_mse)
-    if print_mses:
-      print(new_mse)
+    if print_mismatches:
+      print(mismatches[-1])
     gc.collect()
     torch.cuda.empty_cache()
     if save_progress_dir is not None:
@@ -95,10 +91,10 @@ def active_learning(
             'iter': i,
             'structures': structures,
             'ys': ys,
-            'mses': mses}
+            'mismatches': mismatches}
 
       with open(save_progress_dir + "/" + str(sys.argv[1]) + "_" + str(i) + ".pkl", "wb") as file:
           pickle.dump(res, file)
 
-  return structures, ys, mses, (
+  return structures, ys, mismatches, (
       datasets, kfolds, test_indices, test_data, test_targets, ensemble)

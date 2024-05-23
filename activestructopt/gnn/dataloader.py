@@ -43,7 +43,7 @@ def prepare_data(
       reprocess_data(data, config, device)
 
     if y is not None:
-      data.y = torch.tensor(np.array([y]))
+      data.y = torch.tensor(y)
 
     return data
 

@@ -97,11 +97,16 @@ class Ensemble:
     prediction = vmap(fmodel, in_dims = (0, 0, None))(
       self.params, self.buffers, next(iter(DataLoader(data, batch_size = len(data)))))
 
+    print(f"prediction size: {prediction.size()}")
+
     mean = torch.mean(prediction, dim = 0)
+    print(f"mean size: {mean.size()}")
     # last term to remove Bessel correction and match numpy behavior
     # https://github.com/pytorch/pytorch/issues/1082
     std = self.scalar * torch.std(prediction, dim = 0) * np.sqrt(
       (self.k - 1) / self.k)
+    print(f"std size: {std.size()}")
+    assert False
 
     return torch.stack((mean, std))
 
@@ -112,9 +117,10 @@ class Ensemble:
     zscores = []
     for i in range(len(test_targets)):
       for j in range(len(test_targets[0])):
-        zscores.append((
-          test_res[0][i][j].item() - test_targets[i][j]
-          ) / test_res[1][i][j].item())
+        for k in range(len(test_targets[0][0])):
+          zscores.append((
+            test_res[0][i][j][k].item() - test_targets[i][j][k]
+            ) / test_res[1][i][j][k].item())
     zscores = np.sort(zscores)
     normdist = norm()
     f = lambda x: np.trapz(np.abs(np.cumsum(np.ones(len(zscores))) / len(

@@ -1,8 +1,9 @@
 from activestructopt.gnn.dataloader import prepare_data
 from activestructopt.optimization.shared.constraints import lj_reject
 import numpy as np
+import copy
 
-def make_data_splits(initial_structure, optfunc, args, config, 
+def make_data_splits(initial_structure, target, optfunc, config, 
                       perturbrmin = 0.1, perturbrmax = 1.0, 
                       N = 100, split = 0.85, k = 5, device = 'cuda', seed = 0):
   np.random.seed(seed)
@@ -15,9 +16,12 @@ def make_data_splits(initial_structure, optfunc, args, config,
       rejected = lj_reject(new_structure)
     structures[i] = new_structure.copy()
 
-  y_promises = [optfunc(s, **(args)) for s in structures]
+  y_promises = [copy.deepcopy(optfunc) for _ in structures]
+  for s in structures:
+    y_promises.get(s)
   ys = [yp.resolve() for yp in y_promises]
-  data = [prepare_data(structures[i], config, y = ys[i]).to(device) for i in range(N)]
+  data = [prepare_data(structures[i], config, y = ys[i]).to(
+    device) for i in range(N)]
       
   structure_indices = np.random.permutation(np.arange(1, N))
   trainval_indices = structure_indices[:int(np.round(split * N) - 1)]
@@ -27,19 +31,22 @@ def make_data_splits(initial_structure, optfunc, args, config,
   test_data = [data[i] for i in test_indices]
   test_targets = [ys[i] for i in test_indices]
   train_indices = [np.concatenate(
-      [kfolds[j] for j in range(k) if j != i]) for i in range(k)]
+    [kfolds[j] for j in range(k) if j != i]) for i in range(k)]
   
   datasets = [([data[j] for j in train_indices[i]], 
-      [data[j] for j in kfolds[i]]) for i in range(k)]
-  
-  return structures, ys, datasets, kfolds, test_indices, test_data, test_targets
+    [data[j] for j in kfolds[i]]) for i in range(k)]
 
-def update_datasets(datasets, new_structure, config, optfunc, args, device, 
-  mses, target):
-  y_promise = optfunc(new_structure, **(args))
+  mismatches = [optfunc.get_mismatch(y, target) for y in ys]
+  
+  return structures, ys, mismatches, datasets, kfolds, test_indices, test_data, test_targets
+
+def update_datasets(datasets, new_structure, config, optfunc, device, 
+  ys, mismatches, target):
+  y_promise = copy.deepcopy(optfunc) 
+  y_promise.get(new_structure)
   y = y_promise.resolve()
-  new_mse = np.mean((y - target) ** 2)
-  y_promise.garbage_collect(new_mse <= min(mses))
+  new_mismatch = optfunc.get_mismatch(y, target)
+  y_promise.garbage_collect(new_mismatch <= min(mismatches))
   new_data = prepare_data(new_structure, config, y = y).to(device)
   fold = len(datasets) - 1
   for i in range(len(datasets) - 1):
@@ -50,4 +57,6 @@ def update_datasets(datasets, new_structure, config, optfunc, args, device,
   for i in range(len(datasets)):
     if fold != i:
       datasets[i][0].append(new_data)
-  return datasets, y, new_mse
+  ys.append(y)
+  mismatches.append(new_mismatch)
+  return datasets, ys, mismatches
