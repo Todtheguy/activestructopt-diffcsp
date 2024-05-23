@@ -2,14 +2,13 @@ from pymatgen.io import feff
 from pymatgen.io.feff.sets import MPEXAFSSet
 from pymatgen.io.feff.outputs import Xmu
 import numpy as np
-import torch
 import os
 import time
 import subprocess
 import shutil
 
 class EXAFSPromise:
-	def __init__(self, feff_location = "", folder = "", 
+	def __init__(self, initial_structure, feff_location = "", folder = "", 
 		absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0) -> None:
 		self.feff_location = feff_location
 		self.parent_folder = folder
@@ -17,16 +16,16 @@ class EXAFSPromise:
 		self.edge = edge
 		self.radius = radius
 		self.kmax = kmax
+		self.mask = [x.symbol == self.absorber 
+			for x in initial_structure.species]
 
-	def setup_config(self, config, initial_structure):
-		self.mask = np.array([x.symbol == self.absorber 
-					for x in initial_structure.species])
+	def setup_config(self, config):
 		config['dataset']['preprocess_params']['prediction_level'] = 'node'
 		config['optim']['loss'] = {
 			'loss_type': 'MaskedTorchLossWrapper',
 			'loss_args': {
 				'loss_fn': 'l1_loss',
-				'mask': torch.Tensor(self.mask)
+				'mask': self.mask,
 			}
 		}
 		config['dataset']['preprocess_params']['output_dim'] = 181
@@ -129,4 +128,5 @@ class EXAFSPromise:
 			shutil.rmtree(self.folder)
 
 	def get_mismatch(self, to_compare, target):
-		return np.mean((np.mean(to_compare[self.mask], axis = 0) - target) ** 2) 
+		return np.mean((
+			np.mean(to_compare[np.array(self.mask)], axis = 0) - target) ** 2) 

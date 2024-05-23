@@ -45,7 +45,7 @@ def active_learning(
     device = device,
     seed = seed,
   )
-  config = optfunc.setup_config(config, initial_structure)
+  config = optfunc.setup_config(config)
   lr1, lr2 = config['optim']['lr'], config['optim']['lr'] / lr_reduction
   if print_mismatches:
     print(mismatches)
