@@ -9,13 +9,14 @@ import shutil
 
 class EXAFSPromise:
 	def __init__(self, initial_structure, feff_location = "", folder = "", 
-		absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0) -> None:
+		absorber = 'Co', edge = 'K', radius = 10.0, kmax = 12.0, scf = '4.5 0 30 .2 1') -> None:
 		self.feff_location = feff_location
 		self.parent_folder = folder
 		self.absorber = absorber
 		self.edge = edge
 		self.radius = radius
 		self.kmax = kmax
+		self.scf = scf
 		self.mask = [x.symbol == self.absorber 
 			for x in initial_structure.species]
 		self.N = len(self.mask)
@@ -60,7 +61,7 @@ class EXAFSPromise:
 				structure,
 				edge = self.edge,
 				radius = self.radius,
-				user_tag_settings = {'EXAFS': self.kmax})
+				user_tag_settings = {'EXAFS': self.kmax, 'SCF': self.scf})
 
 			atoms_loc = os.path.join(new_abs_folder, 'ATOMS')
 			pot_loc = os.path.join(new_abs_folder, 'POTENTIALS')
