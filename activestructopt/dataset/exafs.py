@@ -99,9 +99,11 @@ class EXAFSPromise:
 				try:
 					f = open(os.path.join(new_abs_folder, "xmu.dat"), "r")
 					opened = True
+					f.close()
 				except:
 					time.sleep(10)
 			time.sleep(10)
+			f = open(os.path.join(new_abs_folder, "xmu.dat"), "r")
 			start = 0
 			i = 0
 			while start == 0:
