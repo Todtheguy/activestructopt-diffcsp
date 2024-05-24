@@ -116,6 +116,7 @@ class Ensemble:
     self.scalar = 1.0
     with torch.inference_mode():
       test_res = self.predict(test_data, prepared = True, mask = mask)
+    print(f"test_res size: {test_res.size()}")
     zscores = []
     for i in range(len(test_targets)):
       target = np.mean(test_targets[i][np.array(mask)], axis = 0)
