@@ -68,9 +68,9 @@ def active_learning(
       'max_epochs'] if i == 0 else finetune_epochs, lr = lr1 if i == 0 else lr2)
     ensemble.set_scalar_calibration(test_data, test_targets, mask = optfunc.mask)
     new_structure = basinhop(ensemble, starting_structures, target, 
-      config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
-      λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr, 
-      step_size = bh_step_size, rmcσ = bh_σ, mask = optfunc.mask)
+      config['dataset'], niters = bh_iters_per_start, 
+      λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr,
+      mask = optfunc.mask)
     structures.append(new_structure)
     datasets, ys, mismatches = update_datasets(
       datasets,
