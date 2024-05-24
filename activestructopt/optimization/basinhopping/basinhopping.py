@@ -65,13 +65,18 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
   del best_ucb, best_x, target, data
   return to_return
 
-def basinhop(ensemble, starting_structures, target, config,
-                  niters = 100, λ = 1.0, lr = 0.01, mask = None):
+def basinhop(ensemble, dataset, starts = 128, iters_per_start = 100, 
+  λ = 1.0, lr = 0.01):
   device = ensemble.device
   ljrmins = torch.tensor(lj_rmins, device = device)
 
-  new_x = run_adam(ensemble, target, starting_structures, config, ljrmins, 
-    niters = niters, λ = λ, lr = lr, mask = mask, device = device)
+  starting_structures = [dataset.structures[j].copy(
+      ) if j < dataset.N else dataset.random_perturbation(
+      ) for j in range(starts)]
+
+  new_x = run_adam(ensemble, dataset.target, starting_structures, 
+    dataset.config, ljrmins, niters = iters_per_start, λ = λ, lr = lr, 
+    mask = dataset.simfunc.mask, device = device)
   
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):

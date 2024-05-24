@@ -66,15 +66,16 @@ class Ensemble:
     self.scalar = 1.0
     self.device = 'cpu'
   
-  def train(self, datasets, iterations = 500, lr = 0.001):
+  def train(self, dataset, iterations = 500, lr = 0.001):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
     for i in range(self.k):
       new_runner = Runner()
       new_runner(self.config, ConfigSetup('train'), 
-                            datasets[i][0], datasets[i][1])
+                            dataset.datasets[i][0], dataset.datasets[i][1])
       if self.ensemble[i] is not None:
-        new_runner.trainer.model[0].load_state_dict(self.ensemble[i].trainer.model[0].state_dict())
+        new_runner.trainer.model[0].load_state_dict(
+          self.ensemble[i].trainer.model[0].state_dict())
       self.ensemble[i] = new_runner
       self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
@@ -109,13 +110,15 @@ class Ensemble:
 
     return torch.stack((mean, std))
 
-  def set_scalar_calibration(self, test_data, test_targets, mask = None):
+  def set_scalar_calibration(self, dataset):
     self.scalar = 1.0
     with torch.inference_mode():
-      test_res = self.predict(test_data, prepared = True, mask = mask)
+      test_res = self.predict(dataset.test_data, prepared = True, 
+        mask = dataset.simfunc.mask)
     zscores = []
-    for i in range(len(test_targets)):
-      target = np.mean(test_targets[i][np.array(mask)], axis = 0)
+    for i in range(len(dataset.test_targets)):
+      target = np.mean(dataset.test_targets[i][np.array(dataset.simfunc.mask)], 
+        axis = 0)
       for j in range(len(target)):
         zscores.append((
           test_res[0][i][j].item() - target[j]) / test_res[1][i][j].item())
