@@ -99,8 +99,8 @@ class Ensemble:
 
     print(f"prediction size: {prediction.size()}")
 
-    prediction = torch.mean(prediction[:][torch.tensor(
-      mask, dtype = torch.bool)][:], dim = 1)
+    prediction = torch.mean(prediction[:, torch.tensor(
+      mask, dtype = torch.bool), :], dim = 1)
 
     print(f"prediction size: {prediction.size()}")
 
