@@ -97,13 +97,9 @@ class Ensemble:
     prediction = vmap(fmodel, in_dims = (0, 0, None))(
       self.params, self.buffers, next(iter(DataLoader(data, batch_size = len(data)))))
 
-    print(f"prediction size: {prediction.size()}")
-
     prediction = torch.mean(torch.transpose(torch.stack(torch.split(prediction, 
       len(mask), dim = 1)), 0, 1)[:, :, torch.tensor(mask, dtype = torch.bool), :], 
       dim = 2) # node level masking
-
-    print(f"prediction size: {prediction.size()}")
 
     mean = torch.mean(prediction, dim = 0)
     # last term to remove Bessel correction and match numpy behavior
@@ -117,7 +113,6 @@ class Ensemble:
     self.scalar = 1.0
     with torch.inference_mode():
       test_res = self.predict(test_data, prepared = True, mask = mask)
-    print(f"test_res size: {test_res.size()}")
     zscores = []
     for i in range(len(test_targets)):
       target = np.mean(test_targets[i][np.array(mask)], axis = 0)
