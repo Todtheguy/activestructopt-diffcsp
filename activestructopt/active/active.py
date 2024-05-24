@@ -23,8 +23,6 @@ def active_learning(
     bh_starts = 128,
     bh_iters_per_start = 100,
     bh_lr = 0.01,
-    bh_step_size = 0.1,
-    bh_σ = 0.0025,
     print_mismatches = True,
     save_progress_dir = None,
     λ = 1.0,
