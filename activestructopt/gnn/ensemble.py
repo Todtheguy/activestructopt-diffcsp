@@ -100,7 +100,7 @@ class Ensemble:
     print(f"prediction size: {prediction.size()}")
 
     prediction = torch.mean(torch.transpose(torch.stack(torch.split(prediction, 
-      len(mask), dim = 1)), 0, 1)[:, torch.tensor(mask, dtype = torch.bool), :], 
+      len(mask), dim = 1)), 0, 1)[:, :, torch.tensor(mask, dtype = torch.bool), :], 
       dim = 2) # node level masking
 
     print(f"prediction size: {prediction.size()}")
