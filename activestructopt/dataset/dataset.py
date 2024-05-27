@@ -18,7 +18,9 @@ class ASODataset:
     self.k = k
     self.simfunc = simfunc
     self.structures = [initial_structure.copy(
-      ) if i == 0 else self.random_perturbation()for i in range(N)]
+      ) if i == 0 else self.random_perturbation() for i in range(N)]
+    self.structures[13].to(filename=f"/content/pristine/3_13.cif")
+    assert False
     y_promises = [copy.deepcopy(simfunc) for _ in self.structures]
     for i, s in enumerate(self.structures):
       y_promises[i].get(s)
