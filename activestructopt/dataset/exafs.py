@@ -93,6 +93,7 @@ class EXAFSPromise:
 
 	def resolve(self):
 		chi_ks = np.zeros((self.N, 181))
+		return chi_ks
 		for absorb_ind in self.inds:
 			new_abs_folder = os.path.join(self.folder, str(absorb_ind))
 			opened = False
