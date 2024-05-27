@@ -35,6 +35,8 @@ class EXAFSPromise:
 
 	def get(self, struct):
 
+		return
+
 		structure = struct.copy()
 
 		# get all indices of the absorber
