@@ -27,7 +27,7 @@ class RDFPromise():
     self.lattice_matrix = np.array(struct.lattice.matrix, dtype=float)
 
   def resolve(self):
-    rdf = np.zeros((self.natoms, self.outdim), dtype = int)
+    rdf = np.zeros((self.natoms, self.outdim), dtype = float)
     for i in range(self.natoms):
       # based heavily on https://github.com/materialsproject/pymatgen/blob/a850e6972b8addc0ecddfefc6394cbb85588f4e4/pymatgen/core/lattice.py#L1412
       # to faster get the distances from pymatgen
