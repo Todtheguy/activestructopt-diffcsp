@@ -3,6 +3,7 @@ from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.optimization.basinhopping.basinhopping import basinhop
 from activestructopt.optimization.shared.objectives import ucb_obj, mse_obj, mae_obj
 from torch.cuda import empty_cache
+from torch import inference_mode
 import numpy as np
 from gc import collect
 from pickle import dump
@@ -43,10 +44,11 @@ class ActiveLearning():
       gnn_mae, _, _ = self.ensemble.set_scalar_calibration(self.dataset)
       self.gnn_maes.append(gnn_mae)
       if not (self.target_structure is None):
-        self.target_predictions.append(self.ensemble.predict(
-          self.target_structure, 
-          mask = self.dataset.simfunc.mask).cpu().numpy())
-      
+        with inference_mode():
+          self.target_predictions.append(self.ensemble.predict(
+            self.target_structure, 
+            mask = self.dataset.simfunc.mask).cpu().numpy())
+        
       opt_profile = self.config['aso_params']['opt']['profiles'][
         np.searchsorted(-np.array(
           self.config['aso_params']['opt']['switch_profiles']), 
