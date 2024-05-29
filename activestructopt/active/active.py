@@ -44,7 +44,8 @@ class ActiveLearning():
       self.gnn_maes.append(gnn_mae)
       if not (self.target_structure is None):
         self.target_predictions.append(self.ensemble.predict(
-          self.target_structure).cpu().numpy())
+          self.target_structure, 
+          mask = self.dataset.simfunc.mask).cpu().numpy())
       
       opt_profile = self.config['aso_params']['opt']['profiles'][
         np.searchsorted(-np.array(
