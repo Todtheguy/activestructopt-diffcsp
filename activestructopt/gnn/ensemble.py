@@ -115,6 +115,7 @@ class Ensemble:
     with torch.inference_mode():
       test_res = self.predict(dataset.test_data, prepared = True, 
         mask = dataset.simfunc.mask)
+    aes = []
     zscores = []
     for i in range(len(dataset.test_targets)):
       target = np.mean(dataset.test_targets[i][np.array(dataset.simfunc.mask)], 
@@ -122,10 +123,11 @@ class Ensemble:
       for j in range(len(target)):
         zscores.append((
           test_res[0][i][j].item() - target[j]) / test_res[1][i][j].item())
+        aes.append(np.abs(test_res[0][i][j].item() - target[j]))
     zscores = np.sort(zscores)
     normdist = norm()
     f = lambda x: np.trapz(np.abs(np.cumsum(np.ones(len(zscores))) / len(
       zscores) - normdist.cdf(zscores / x[0])), normdist.cdf(zscores / x[0]))
     self.scalar = minimize(f, [1.0]).x[0]
-    return normdist.cdf(np.sort(zscores) / self.scalar), np.cumsum(
-      np.ones(len(zscores))) / len(zscores)
+    return np.mean(aes), normdist.cdf(np.sort(zscores) / 
+      self.scalar), np.cumsum(np.ones(len(zscores))) / len(zscores)

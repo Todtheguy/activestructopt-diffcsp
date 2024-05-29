@@ -15,6 +15,7 @@ class ActiveLearning():
     self.config = simfunc.setup_config(config)
     self.optfunc = optfunc
     self.index = index
+    self.gnn_maes = []
 
     self.dataset = ASODataset(initial_structure, target, simfunc, 
       config['dataset'], **(config['aso_params']['dataset']))
@@ -36,7 +37,8 @@ class ActiveLearning():
 
       self.ensemble.train(self.dataset, iterations = train_iters, lr = lr)
       
-      self.ensemble.set_scalar_calibration(self.dataset)
+      gnn_mae, _, _ = self.ensemble.set_scalar_calibration(self.dataset)
+      self.gnn_maes.append(gnn_mae)
       
       opt_profile = self.config['aso_params']['opt']['profiles'][
         np.searchsorted(-np.array(
@@ -66,7 +68,8 @@ class ActiveLearning():
           'target': self.dataset.target,
           'structures': self.dataset.structures,
           'ys': self.dataset.ys,
-          'mismatches': self.dataset.mismatches}
+          'mismatches': self.dataset.mismatches,
+          'gnn_maes': self.gnn_maes,}
     for k, v in additional_data.items():
       res[k] = v
     with open(filename, "wb") as file:
