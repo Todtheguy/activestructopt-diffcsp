@@ -1,7 +1,9 @@
 from activestructopt.dataset.dataset import ASODataset
 from activestructopt.gnn.ensemble import Ensemble
 from activestructopt.optimization.basinhopping.basinhopping import basinhop
+from activestructopt.optimization.shared.objectives import ucb_obj, mse_obj, mae_obj
 from torch.cuda import empty_cache
+import numpy as np
 from gc import collect
 from pickle import dump
 from os.path import join as pathjoin
@@ -36,8 +38,16 @@ class ActiveLearning():
       
       self.ensemble.set_scalar_calibration(self.dataset)
       
-      new_structure = self.optfunc(self.ensemble, self.dataset, **(
-        self.config['aso_params']['opt']))
+      opt_profile = self.config['aso_params']['opt']['profiles'][
+        np.searchsorted(-np.array(
+          self.config['aso_params']['opt']['switch_profiles']), 
+          -(active_steps - i))]
+      obj_func = ucb_obj if opt_profile['obj_func'] == 'ucb_obj' else (
+        mse_obj if opt_profile['obj_func'] == 'mse_obj' else (
+        mae_obj if opt_profile['obj_func'] == 'mae_obj' else None))
+      new_structure = self.optfunc(self.ensemble, self.dataset, 
+        obj_func = obj_func, obj_args = opt_profile['obj_args'],
+        **(self.config['aso_params']['opt']['args']))
       
       self.dataset.update(new_structure)
 

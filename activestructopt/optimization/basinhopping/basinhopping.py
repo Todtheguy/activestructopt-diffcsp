@@ -2,13 +2,14 @@ import torch
 import numpy as np
 from activestructopt.gnn.dataloader import prepare_data, reprocess_data
 from activestructopt.optimization.shared.constraints import lj_rmins, lj_repulsion
+from activestructopt.optimization.shared.objectives import ucb_obj
 
 def run_adam(ensemble, target, starting_structures, config, ljrmins,
-                    niters = 100, λ = 1.0, lr = 0.01, mask = None, 
-                    device = 'cpu'):
+                    niters = 100, lr = 0.01, mask = None, 
+                    obj_func = ucb_obj, obj_args = {'λ': 1.0}, device = 'cpu'):
   nstarts = len(starting_structures)
   natoms = len(starting_structures[0])
-  best_ucb = torch.tensor([float('inf')], device = device)
+  best_obj = torch.tensor([float('inf')], device = device)
   best_x = torch.zeros(3 * natoms, device = device)
   target = torch.tensor(target, device = device)
   data = [prepare_data(s, config, pos_grad = True, device = device, 
@@ -35,24 +36,20 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
           stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
           predictions = ensemble.predict(data[starti:(stopi+1)], 
             prepared = True, mask = mask)
-          ucbs = torch.zeros(stopi - starti + 1)
-          ucb_total = torch.tensor([0.0], device = device)
+
+          objs, obj_total = obj_func(predictions, target, device = device, 
+            N = stopi - starti + 1, **(obj_args))
           for j in range(stopi - starti + 1):
-            yhat = torch.mean((predictions[1][j] ** 2) + (
-              (target - predictions[0][j]) ** 2))
-            s = torch.sqrt(2 * torch.sum((predictions[1][j] ** 4) + 2 * (
-              predictions[1][j] ** 2) * ((
-              target - predictions[0][j]) ** 2))) / (len(target))
-            ucb = torch.maximum(yhat - λ * s, torch.tensor(0.)) + lj_repulsion(
-              data[starti + j], ljrmins)
-            ucb_total = ucb_total + ucb
-            ucbs[j] = ucb.detach()
-          ucb_total.backward()
-          if (torch.min(ucbs) < best_ucb).item():
-            best_ucb = torch.min(ucbs).detach()
-            best_x = data[starti + torch.argmin(ucbs).item()].pos.detach(
+            objs[j] += lj_repulsion(data[starti + j], ljrmins)
+            obj_total += lj_repulsion(data[starti + j], ljrmins)
+            objs[j] = objs[j].detach()
+
+          obj_total.backward()
+          if (torch.min(objs) < best_obj).item():
+            best_obj = torch.min(objs).detach()
+            best_x = data[starti + torch.argmin(objs).item()].pos.detach(
               ).flatten()
-          del predictions, ucb, yhat, s, ucbs, ucb_total
+          del predictions, objs, obj_total
         predicted = True
       except torch.cuda.OutOfMemoryError:
         split -= 1
@@ -62,21 +59,22 @@ def run_adam(ensemble, target, starting_structures, config, ljrmins,
       optimizer.step()
 
   to_return = best_x.detach().cpu().numpy() 
-  del best_ucb, best_x, target, data
+  del best_obj, best_x, target, data
   return to_return
 
 def basinhop(ensemble, dataset, starts = 128, iters_per_start = 100, 
-  λ = 1.0, lr = 0.01):
+  lr = 0.01, obj_func = ucb_obj, obj_args = {'λ': 1.0}):
   device = ensemble.device
   ljrmins = torch.tensor(lj_rmins, device = device)
 
   starting_structures = [dataset.structures[j].copy(
-      ) if j < dataset.N else dataset.random_perturbation(
-      ) for j in range(starts)]
+    ) if j < dataset.N else dataset.random_perturbation(
+    ) for j in range(starts)]
 
   new_x = run_adam(ensemble, dataset.target, starting_structures, 
-    dataset.config, ljrmins, niters = iters_per_start, λ = λ, lr = lr, 
-    mask = dataset.simfunc.mask, device = device)
+    dataset.config, ljrmins, niters = iters_per_start, lr = lr, 
+    mask = dataset.simfunc.mask, obj_func = obj_func, obj_args = obj_args, 
+    device = device)
   
   new_structure = starting_structures[0].copy()
   for i in range(len(new_structure)):

@@ -87,7 +87,10 @@ torchmd_config = {
    'seed': 0},
   'train': {'finetune_epochs': 500, 
    'lr_reduction': 1.0},
-  'opt': {'starts': 128, 
+  'opt': {'args': {'starts': 128, 
    'iters_per_start': 100, 
-   'lr': 0.01, 
-   'λ': 1.0}}}
+   'lr': 0.01}, 
+   'switch_profiles': [5],
+   'profiles': [{'obj_func': 'ucb_obj', 'obj_args': {'λ': 1.0},}, 
+   {'obj_func': 'mse_obj', 'obj_args': {}}],
+   }}}
