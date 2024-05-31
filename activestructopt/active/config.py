@@ -93,6 +93,6 @@ torchmd_config = {
     'iters_per_start': 100, 
     'lr': 0.01}, 
    'switch_profiles': [20],
-   'profiles': [{'name': 'UCB', 'obj_args': {'λ': 1.0},}, 
-    {'name': 'MSE', 'obj_args': {}}],
+   'profiles': [{'name': 'UCB', 'args': {'λ': 1.0},}, 
+    {'name': 'MSE', 'args': {}}],
    }}}
