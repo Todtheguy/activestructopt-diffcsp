@@ -96,9 +96,7 @@ class Registry:
 
     @classmethod
     def register_dataset(cls, name):
-        print("Registering database 1")
         def wrap(func):
-            print("Registering database 2")
             cls.mapping["dataset_name_mapping"][name] = func
             return func
         return wrap
