@@ -1,3 +1,6 @@
+from activestructopt.model.base import BaseModel
+from activestructopt.dataset.base import BaseDataset
+from activestructopt.objective.base import BaseObjective
 from abc import ABC, abstractmethod
 
 class BaseOptimizer(ABC):
