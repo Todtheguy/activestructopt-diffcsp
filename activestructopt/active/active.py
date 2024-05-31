@@ -84,7 +84,7 @@ class ActiveLearning():
           'structures': self.dataset.structures,
           'ys': self.dataset.ys,
           'mismatches': self.dataset.mismatches,
-          'gnn_maes': self.gnn_maes,}
+          'model_errs': self.model_errs,}
     if not (self.target_structure is None):
       res['target_predictions'] = self.target_predictions
     for k, v in additional_data.items():
