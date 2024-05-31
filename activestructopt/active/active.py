@@ -40,9 +40,9 @@ class ActiveLearning():
       print(self.dataset.mismatches)
 
     for i in range(active_steps):
-      train_profile = self.config['aso_params']['train']['profiles'][
+      train_profile = self.config['aso_params']['model']['profiles'][
         np.searchsorted(-np.array(
-          self.config['aso_params']['train']['switch_profiles']), 
+          self.config['aso_params']['model']['switch_profiles']), 
           -(active_steps - i))]
       opt_profile = self.config['aso_params']['optimizer']['profiles'][
         np.searchsorted(-np.array(
