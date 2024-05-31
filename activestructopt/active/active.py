@@ -1,4 +1,4 @@
-from activestructopt.common.registry import registry
+from activestructopt.common.registry import registry, setup_imports
 from torch.cuda import empty_cache
 from torch import inference_mode
 import numpy as np
@@ -9,6 +9,8 @@ from os.path import join as pathjoin
 class ActiveLearning():
   def __init__(self, simfunc, target, config, initial_structure, 
     index = -1, target_structure = None):
+    setup_imports()
+
     self.simfunc = simfunc
     self.config = simfunc.setup_config(config)
     self.index = index
