@@ -130,8 +130,6 @@ class Registry:
 
     @classmethod
     def get_class(cls, name: str, mapping_name: str):
-        print(cls.mapping)
-        print(cls.mapping[mapping_name])
         existing_mapping = cls.mapping[mapping_name].get(name, None)
         if existing_mapping is not None:
             return existing_mapping

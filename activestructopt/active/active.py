@@ -63,6 +63,7 @@ class ActiveLearning():
       optimizer_cls = registry.get_optimizer_class(
         self.config['aso_params']['optimizer']['name'])
 
+      print(self.config['aso_params']['optimizer']['args'])
       new_structure = optimizer_cls().run(self.model, self.dataset, objective,
         **(self.config['aso_params']['optimizer']['args']))
       
