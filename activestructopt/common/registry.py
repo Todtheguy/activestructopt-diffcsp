@@ -95,7 +95,7 @@ class Registry:
             return existing_mapping
 
         # mapping be class path of type `{module_name}.{class_name}`
-        assert name.count(".") >= 1
+        #assert name.count(".") >= 1
 
         return _get_absolute_mapping(name)
 
