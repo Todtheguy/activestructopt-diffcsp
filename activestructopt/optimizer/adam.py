@@ -8,7 +8,7 @@ from activestructopt.common.registry import registry
 import torch
 import numpy as np
 
-@registry.register_optimizer("Adan")
+@registry.register_optimizer("Adam")
 class Adam(BaseOptimizer):
   def __init__(self) -> None:
     pass
