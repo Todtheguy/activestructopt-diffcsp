@@ -79,8 +79,7 @@ def setup_imports():
     for key in import_keys:
         dir_list = (project_root / "activestructopt" / key).rglob("*.py")
         for f in dir_list:
-            if "old" not in str(f) and "in_progress" not in str(f):
-                _import_local_file(f, project_root = project_root)
+            _import_local_file(f, project_root = project_root)
 
 
 class Registry:
