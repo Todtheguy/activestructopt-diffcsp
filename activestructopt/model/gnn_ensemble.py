@@ -46,8 +46,7 @@ class GNNEnsemble(BaseModel):
     gnn_mae, _, _ = self.set_scalar_calibration(dataset)
     return gnn_mae
 
-  def predict(self, structure: IStructure | list[IStructure], prepared = False, 
-    mask = None, **kwargs):
+  def predict(self, structure, prepared = False, mask = None, **kwargs):
     def fmodel(params, buffers, x):
       return functional_call(self.base_model, (params, buffers), (x,))['output']
     data = structure if prepared else [prepare_data(

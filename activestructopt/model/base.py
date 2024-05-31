@@ -17,7 +17,7 @@ class BaseModel(ABC):
     pass
 
   @abstractmethod
-  def predict(self, structure: IStructure | list[IStructure], **kwargs):
+  def predict(self, structure, **kwargs):
     pass
 
 class Runner:
