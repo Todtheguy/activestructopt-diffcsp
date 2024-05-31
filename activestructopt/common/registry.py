@@ -17,7 +17,6 @@ Various decorators for registry different kind of classes with unique keys
 """
 import importlib
 
-
 def _get_absolute_mapping(name: str):
     # in this case, the `name` should be the fully qualified name of the class
     # e.g., `matdeeplearn.tasks.base_task.BaseTask`
@@ -40,6 +39,71 @@ def _get_absolute_mapping(name: str):
         raise RuntimeError(
             f"Could not import class {class_name=} from module {module_name=}"
         ) from e
+
+def _import_local_file(path: Path, *, project_root: Path):
+    """
+    Imports a Python file as a module
+
+    :param path: The path to the file to import
+    :type path: Path
+    :param project_root: The root directory of the project (i.e., the "activestructopt" folder)
+    :type project_root: Path
+    """
+
+    path = path.resolve()
+    project_root = project_root.resolve()
+
+    module_name = ".".join(
+        path.absolute().relative_to(project_root.absolute()).with_suffix("").parts
+    )
+    # logging.debug(f"Resolved module name of {path} to {module_name}")
+    importlib.import_module(module_name)
+
+
+def _get_project_root():
+    """
+    Gets the root folder of the project (the "activestructopt" folder)
+    :return: The absolute path to the project root.
+    """
+    from matdeeplearn.common.registry import registry
+
+    # Automatically load all of the modules, so that
+    # they register with registry
+    root_folder = registry.get("activestructopt_root", no_warning=True)
+
+    if root_folder is not None:
+        assert isinstance(root_folder, str), "activestructopt_root must be a string"
+        root_folder = Path(root_folder).resolve().absolute()
+        assert root_folder.exists(), f"{root_folder} does not exist"
+        assert root_folder.is_dir(), f"{root_folder} is not a directory"
+    else:
+        root_folder = Path(__file__).resolve().absolute().parent.parent
+
+    # root_folder is the "matdeeplearn" folder, so we need to go up one more level
+    return root_folder.parent
+
+
+# Copied from https://github.com/facebookresearch/mmf/blob/master/mmf/utils/env.py#L89.
+def setup_imports():
+    from matdeeplearn.common.registry import registry
+
+    # First, check if imports are already setup
+    has_already_setup = registry.get("imports_setup", no_warning=True)
+    if has_already_setup:
+        return
+
+    try:
+        project_root = _get_project_root()
+
+        import_keys = ["dataset", "model", "objective", "optimizer", "simulation"]
+        for key in import_keys:
+            dir_list = (project_root / "activestructopt" / key).rglob("*.py")
+            for f in dir_list:
+                if "old" not in str(f) and "in_progress" not in str(f):
+                    _import_local_file(f, project_root=project_root)
+
+    finally:
+        registry.register("imports_setup", True)
 
 
 class Registry:
@@ -124,3 +188,5 @@ class Registry:
         return cls.get_class(name, "simulation_name_mapping")
 
 registry = Registry()
+
+
