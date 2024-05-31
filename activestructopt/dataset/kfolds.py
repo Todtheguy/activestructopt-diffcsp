@@ -1,12 +1,17 @@
-from activestructopt.gnn.dataloader import prepare_data
-from activestructopt.optimization.shared.constraints import lj_reject
+from activestructopt.common.dataloader import prepare_data
+from activestructopt.common.constraints import lj_reject
+from activestructopt.common.registry import registry
+from activestructopt.dataset.base import BaseDataset
+from activestructopt.simulation.base import BaseSimulation
+from pymatgen.core.structure import IStructure
 import numpy as np
 import copy
 
-class ASODataset:
-  def __init__(self, initial_structure, target, simfunc, config, 
-                      perturbrmin = 0.1, perturbrmax = 1.0, 
-                      N = 100, split = 0.85, k = 5, device = 'cuda', seed = 0):
+@registry.register_dataset("KFoldsDataset")
+class KFoldsDataset(BaseDataset):
+  def __init__(self, simulation: BaseSimulation, initial_structure: IStructure, 
+    target, config, perturbrmin = 0.1, perturbrmax = 1.0, N = 100, 
+    split = 0.85, k = 5, device = 'cuda', seed = 0, **kwargs):
     np.random.seed(seed)
     self.device = device
     self.config = config
@@ -16,11 +21,11 @@ class ASODataset:
     self.perturbrmax = perturbrmax
     self.N = N
     self.k = k
-    self.simfunc = simfunc
+    self.simfunc = simulation
     self.structures = [initial_structure.copy(
-      ) if i == 0 else self.random_perturbation() for i in range(N)]
+      ) if i == 0 else self.sample() for i in range(N)]
     
-    y_promises = [copy.deepcopy(simfunc) for _ in self.structures]
+    y_promises = [copy.deepcopy(simulation) for _ in self.structures]
     for i, s in enumerate(self.structures):
       y_promises[i].get(s)
     self.ys = [yp.resolve() for yp in y_promises]
@@ -40,9 +45,9 @@ class ASODataset:
     self.datasets = [([data[j] for j in train_indices[i]], 
       [data[j] for j in self.kfolds[i]]) for i in range(k)]
 
-    self.mismatches = [simfunc.get_mismatch(y, target) for y in self.ys]
+    self.mismatches = [simulation.get_mismatch(y, target) for y in self.ys]
 
-  def random_perturbation(self):
+  def sample(self):
     rejected = True
     while rejected:
       new_structure = self.initial_structure.copy()
@@ -51,7 +56,7 @@ class ASODataset:
       rejected = lj_reject(new_structure)
     return new_structure
 
-  def update(self, new_structure):
+  def update(self, new_structure: IStructure):
     self.structures.append(new_structure)
     y_promise = copy.deepcopy(self.simfunc) 
     y_promise.get(new_structure)

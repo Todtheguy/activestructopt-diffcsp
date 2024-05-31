@@ -1,5 +1,5 @@
 import numpy as np
-from activestructopt.optimization.shared.constraints import lj_reject
+from activestructopt.common.constraints import lj_reject
 
 def step(structure, latticeprob, σr, σl, σθ, step_type = 'one'):
     new_struct = structure.copy()

@@ -2,7 +2,7 @@
 
 import nlopt
 import numpy as np
-from activestructopt.optimization.shared.constraints import lj_repulsion_pymatgen
+from activestructopt.common.constraints import lj_repulsion_pymatgen
 
 gn_algs = [nlopt.GN_CRS2_LM, nlopt.GN_ESCH, nlopt.GN_ISRES, nlopt.GN_DIRECT, 
   nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT_L_NOSCAL, 

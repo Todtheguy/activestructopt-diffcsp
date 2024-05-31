@@ -1,7 +1,4 @@
-from activestructopt.dataset.dataset import ASODataset
-from activestructopt.gnn.ensemble import Ensemble
-from activestructopt.optimization.basinhopping.basinhopping import basinhop
-from activestructopt.optimization.shared.objectives import ucb_obj, mse_obj, mae_obj
+from activestructopt.common.registry import registry
 from torch.cuda import empty_cache
 from torch import inference_mode
 import numpy as np
@@ -11,20 +8,27 @@ from os.path import join as pathjoin
 
 class ActiveLearning():
   def __init__(self, simfunc, target, config, initial_structure, 
-    optfunc = basinhop, index = -1, target_structure = None):
+    index = -1, target_structure = None):
     self.simfunc = simfunc
     self.config = simfunc.setup_config(config)
-    self.optfunc = optfunc
     self.index = index
-    self.gnn_maes = []
+
+    self.model_errs = []
     self.target_structure = target_structure
     if not (target_structure is None):
       self.target_predictions = []
 
-    self.dataset = ASODataset(initial_structure, target, simfunc, 
-      config['dataset'], **(config['aso_params']['dataset']))
+    dataset_cls = registry.get_dataset_class(
+      self.config['aso_params']['dataset']['name'])
+
+    self.dataset = dataset_cls(simfunc, initial_structure, target,
+      self.config['dataset'], **(self.config['aso_params']['dataset']['args']))
+
+    model_cls = registry.get_model_class(
+      self.config['aso_params']['model']['name'])
     
-    self.ensemble = Ensemble(self.dataset.k, config)
+    self.model = model_cls(self.config, 
+      **(self.config['aso_params']['model']['args']))
   
   def optimize(self, print_mismatches = True, save_progress_dir = None):
     active_steps = self.config['aso_params'][
@@ -34,31 +38,31 @@ class ActiveLearning():
       print(self.dataset.mismatches)
 
     for i in range(active_steps):
-      train_iters = self.config['optim']['max_epochs'] if i == 0 else (
-        self.config['aso_params']['train']['finetune_epochs'])
-      lr = self.config['optim']['lr'] if i == 0 else self.config[
-        'optim']['lr'] / self.config['aso_params']['train']['lr_reduction']
-
-      self.ensemble.train(self.dataset, iterations = train_iters, lr = lr)
+      train_profile = self.config['aso_params']['train']['profiles'][
+        np.searchsorted(-np.array(
+          self.config['aso_params']['train']['switch_profiles']), 
+          -(active_steps - i))]
+      opt_profile = self.config['aso_params']['optimizer']['profiles'][
+        np.searchsorted(-np.array(
+          self.config['aso_params']['optimizer']['switch_profiles']), 
+          -(active_steps - i))]
       
-      gnn_mae, _, _ = self.ensemble.set_scalar_calibration(self.dataset)
-      self.gnn_maes.append(gnn_mae)
+      model_err = self.model.train(self.dataset, **(train_profile))
+      self.model_errs.append(model_err)
       if not (self.target_structure is None):
         with inference_mode():
-          self.target_predictions.append(self.ensemble.predict(
+          self.target_predictions.append(self.model.predict(
             self.target_structure, 
             mask = self.dataset.simfunc.mask).cpu().numpy())
-        
-      opt_profile = self.config['aso_params']['opt']['profiles'][
-        np.searchsorted(-np.array(
-          self.config['aso_params']['opt']['switch_profiles']), 
-          -(active_steps - i))]
-      obj_func = ucb_obj if opt_profile['obj_func'] == 'ucb_obj' else (
-        mse_obj if opt_profile['obj_func'] == 'mse_obj' else (
-        mae_obj if opt_profile['obj_func'] == 'mae_obj' else None))
-      new_structure = self.optfunc(self.ensemble, self.dataset, 
-        obj_func = obj_func, obj_args = opt_profile['obj_args'],
-        **(self.config['aso_params']['opt']['args']))
+
+      objective_cls = registry.get_objective_class(opt_profile['name'])
+      objective = objective_cls(**(opt_profile['args']))
+
+      optimizer_cls = registry.get_optimizer_class(
+        self.config['aso_params']['optimizer']['name'])
+
+      new_structure = optimizer_cls().run(self.model, self.dataset, objective,
+        **(self.config['aso_params']['optimizer']['args']))
       
       self.dataset.update(new_structure)
 

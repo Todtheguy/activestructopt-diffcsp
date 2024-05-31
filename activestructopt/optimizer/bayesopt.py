@@ -1,6 +1,6 @@
 from bayes_opt import BayesianOptimization
 import numpy as np
-from activestructopt.optimization.shared.constraints import lj_repulsion_pymatgen
+from activestructopt.common.constraints import lj_repulsion_pymatgen
 
 def bayesian_optimization(optfunc, args, exp, starting_structure, N, nrandom = 10):
   def construct_structure(**kwargs):
