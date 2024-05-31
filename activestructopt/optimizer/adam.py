@@ -27,7 +27,7 @@ class Adam(BaseOptimizer):
     ljrmins = torch.tensor(lj_rmins, device = device)
     best_obj = torch.tensor([float('inf')], device = device)
     best_x = torch.zeros(3 * natoms, device = device)
-    target = torch.tensor(target, device = device)
+    target = torch.tensor(dataset.target, device = device)
     
     data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
       preprocess = False) for s in starting_structures]
