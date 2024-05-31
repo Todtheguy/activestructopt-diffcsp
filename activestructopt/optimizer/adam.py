@@ -13,8 +13,9 @@ class Adam(BaseOptimizer):
   def __init__(self) -> None:
     pass
 
-  def run(model: BaseModel, dataset: BaseDataset, objective: BaseObjective,
-    starts = 128, iters_per_start = 100, lr = 0.01):
+  def run(self, model: BaseModel, dataset: BaseDataset, 
+    objective: BaseObjective, starts = 128, iters_per_start = 100, lr = 0.01, 
+    **kwargs):
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else dataset.sample(
