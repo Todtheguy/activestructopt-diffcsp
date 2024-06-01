@@ -31,52 +31,58 @@ class ActiveLearning():
     
     self.model = model_cls(self.config, 
       **(self.config['aso_params']['model']['args']))
+
+    self.error = None
   
   def optimize(self, print_mismatches = True, save_progress_dir = None):
-    active_steps = self.config['aso_params'][
-      'max_forward_calls'] - self.dataset.N
-
-    if print_mismatches:
-      print(self.dataset.mismatches)
-
-    for i in range(active_steps):
-      train_profile = self.config['aso_params']['model']['profiles'][
-        np.searchsorted(-np.array(
-          self.config['aso_params']['model']['switch_profiles']), 
-          -(active_steps - i))]
-      opt_profile = self.config['aso_params']['optimizer']['profiles'][
-        np.searchsorted(-np.array(
-          self.config['aso_params']['optimizer']['switch_profiles']), 
-          -(active_steps - i))]
-      
-      model_err = self.model.train(self.dataset, **(train_profile))
-      self.model_errs.append(model_err)
-      if not (self.target_structure is None):
-        with inference_mode():
-          self.target_predictions.append(self.model.predict(
-            self.target_structure, 
-            mask = self.dataset.simfunc.mask).cpu().numpy())
-
-      objective_cls = registry.get_objective_class(opt_profile['name'])
-      objective = objective_cls(**(opt_profile['args']))
-
-      optimizer_cls = registry.get_optimizer_class(
-        self.config['aso_params']['optimizer']['name'])
-
-      new_structure = optimizer_cls().run(self.model, self.dataset, objective,
-        **(self.config['aso_params']['optimizer']['args']))
-      
-      self.dataset.update(new_structure)
+    try:
+      active_steps = self.config['aso_params'][
+        'max_forward_calls'] - self.dataset.N
 
       if print_mismatches:
-        print(self.dataset.mismatches[-1])
+        print(self.dataset.mismatches)
 
-      collect()
-      empty_cache()
-      
-      if save_progress_dir is not None:
-        self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
-          i) + ".pkl"))
+      for i in range(active_steps):
+        train_profile = self.config['aso_params']['model']['profiles'][
+          np.searchsorted(-np.array(
+            self.config['aso_params']['model']['switch_profiles']), 
+            -(active_steps - i))]
+        opt_profile = self.config['aso_params']['optimizer']['profiles'][
+          np.searchsorted(-np.array(
+            self.config['aso_params']['optimizer']['switch_profiles']), 
+            -(active_steps - i))]
+        
+        model_err = self.model.train(self.dataset, **(train_profile))
+        self.model_errs.append(model_err)
+        if not (self.target_structure is None):
+          with inference_mode():
+            self.target_predictions.append(self.model.predict(
+              self.target_structure, 
+              mask = self.dataset.simfunc.mask).cpu().numpy())
+
+        objective_cls = registry.get_objective_class(opt_profile['name'])
+        objective = objective_cls(**(opt_profile['args']))
+
+        optimizer_cls = registry.get_optimizer_class(
+          self.config['aso_params']['optimizer']['name'])
+
+        new_structure = optimizer_cls().run(self.model, self.dataset, objective,
+          **(self.config['aso_params']['optimizer']['args']))
+        
+        self.dataset.update(new_structure)
+
+        if print_mismatches:
+          print(self.dataset.mismatches[-1])
+
+        collect()
+        empty_cache()
+        
+        if save_progress_dir is not None:
+          self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
+            i) + ".pkl"))
+    except Exception as err:
+      self.error = err
+
 
   def save(self, filename, additional_data = {}):
     res = {'index': self.index,
@@ -84,7 +90,8 @@ class ActiveLearning():
           'structures': self.dataset.structures,
           'ys': self.dataset.ys,
           'mismatches': self.dataset.mismatches,
-          'model_errs': self.model_errs,}
+          'model_errs': self.model_errs,
+          'error': self.error,}
     if not (self.target_structure is None):
       res['target_predictions'] = self.target_predictions
     for k, v in additional_data.items():
