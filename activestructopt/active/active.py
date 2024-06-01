@@ -27,7 +27,7 @@ class ActiveLearning():
 
     dataset_cls = registry.get_dataset_class(
       self.config['aso_params']['dataset']['name'])
-    self.dataset = dataset_cls(simfunc, initial_structure, target,
+    self.dataset = dataset_cls(simfunc, self.sampler, initial_structure, target,
       self.config['dataset'], **(self.config['aso_params']['dataset']['args']))
 
     model_cls = registry.get_model_class(
