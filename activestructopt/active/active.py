@@ -20,15 +20,18 @@ class ActiveLearning():
     if not (target_structure is None):
       self.target_predictions = []
 
+    sampler_cls = registry.get_sampler_class(
+      self.config['aso_params']['sampler']['name'])
+    self.sampler = sampler_cls(initial_structure, 
+      **(self.config['aso_params']['sampler']['args']))
+
     dataset_cls = registry.get_dataset_class(
       self.config['aso_params']['dataset']['name'])
-
     self.dataset = dataset_cls(simfunc, initial_structure, target,
       self.config['dataset'], **(self.config['aso_params']['dataset']['args']))
 
     model_cls = registry.get_model_class(
       self.config['aso_params']['model']['name'])
-    
     self.model = model_cls(self.config, 
       **(self.config['aso_params']['model']['args']))
 
@@ -66,8 +69,8 @@ class ActiveLearning():
         optimizer_cls = registry.get_optimizer_class(
           self.config['aso_params']['optimizer']['name'])
 
-        new_structure = optimizer_cls().run(self.model, self.dataset, objective,
-          **(self.config['aso_params']['optimizer']['args']))
+        new_structure = optimizer_cls().run(self.model, self.dataset, objective, 
+          self.sampler, **(self.config['aso_params']['optimizer']['args']))
         
         self.dataset.update(new_structure)
 

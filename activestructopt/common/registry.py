@@ -26,7 +26,8 @@ def setup_imports():
         root_folder = root_folder.parent
     project_root = root_folder.parent.resolve().absolute()
 
-    import_keys = ["dataset", "model", "objective", "optimizer", "simulation"]
+    import_keys = ["sampler", "dataset", "model", "objective", "optimizer", 
+        "simulation"]
     for key in import_keys:
         dir_list = (project_root / "activestructopt" / key).rglob("*.py")
         for f in dir_list:
@@ -38,6 +39,7 @@ class Registry:
     r"""Class for registry object which acts as central source of truth."""
     mapping = {
         # Mappings to respective classes.
+        "sampler_name_mapping": {},
         "dataset_name_mapping": {},
         "model_name_mapping": {},
         "optimizer_name_mapping": {},
@@ -45,6 +47,13 @@ class Registry:
         "simulation_name_mapping": {},
     }
 
+    @classmethod
+    def register_sampler(cls, name):
+        def wrap(func):
+            cls.mapping["sampler_name_mapping"][name] = func
+            return func
+        return wrap
+    
     @classmethod
     def register_dataset(cls, name):
         def wrap(func):
@@ -84,6 +93,10 @@ class Registry:
     def get_class(cls, name: str, mapping_name: str):
         return cls.mapping[mapping_name].get(name, None)
 
+    @classmethod
+    def get_sampler_class(cls, name):
+        return cls.get_class(name, "sampler_name_mapping")
+    
     @classmethod
     def get_dataset_class(cls, name):
         return cls.get_class(name, "dataset_name_mapping")

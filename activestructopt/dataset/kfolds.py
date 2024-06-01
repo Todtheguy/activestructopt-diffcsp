@@ -3,27 +3,26 @@ from activestructopt.common.constraints import lj_reject
 from activestructopt.common.registry import registry
 from activestructopt.dataset.base import BaseDataset
 from activestructopt.simulation.base import BaseSimulation
+from activestructopt.sampler.base import BaseSampler
 from pymatgen.core.structure import IStructure
 import numpy as np
 import copy
 
 @registry.register_dataset("KFoldsDataset")
 class KFoldsDataset(BaseDataset):
-  def __init__(self, simulation: BaseSimulation, initial_structure: IStructure, 
-    target, config, perturbrmin = 0.1, perturbrmax = 1.0, N = 100, 
-    split = 0.85, k = 5, device = 'cuda', seed = 0, **kwargs):
+  def __init__(self, simulation: BaseSimulation, sampler: BaseSampler, 
+    initial_structure: IStructure, target, config, N = 100, split = 0.85, 
+    k = 5, device = 'cuda', seed = 0, **kwargs) -> None:
     np.random.seed(seed)
     self.device = device
     self.config = config
     self.target = target
     self.initial_structure = initial_structure
-    self.perturbrmin = perturbrmin
-    self.perturbrmax = perturbrmax
     self.N = N
     self.k = k
     self.simfunc = simulation
     self.structures = [initial_structure.copy(
-      ) if i == 0 else self.sample() for i in range(N)]
+      ) if i == 0 else sampler.sample() for i in range(N)]
     
     y_promises = [copy.deepcopy(simulation) for _ in self.structures]
     for i, s in enumerate(self.structures):
@@ -46,15 +45,6 @@ class KFoldsDataset(BaseDataset):
       [data[j] for j in self.kfolds[i]]) for i in range(k)]
 
     self.mismatches = [simulation.get_mismatch(y, target) for y in self.ys]
-
-  def sample(self):
-    rejected = True
-    while rejected:
-      new_structure = self.initial_structure.copy()
-      new_structure.perturb(np.random.uniform(
-        self.perturbrmin, self.perturbrmax))
-      rejected = lj_reject(new_structure)
-    return new_structure
 
   def update(self, new_structure: IStructure):
     self.structures.append(new_structure)

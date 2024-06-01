@@ -4,7 +4,10 @@ from activestructopt.model.base import BaseModel
 from activestructopt.dataset.base import BaseDataset
 from activestructopt.objective.base import BaseObjective
 from activestructopt.optimizer.base import BaseOptimizer
+from activestructopt.sampler.base import BaseSampler
 from activestructopt.common.registry import registry
+from pymatgen.core.structure import IStructure
+from pymatgen.core import Lattice
 import torch
 import numpy as np
 
@@ -14,11 +17,12 @@ class Adam(BaseOptimizer):
     pass
 
   def run(self, model: BaseModel, dataset: BaseDataset, 
-    objective: BaseObjective, starts = 128, iters_per_start = 100, lr = 0.01, 
-    **kwargs):
+    objective: BaseObjective, sampler: BaseSampler, 
+    starts = 128, iters_per_start = 100, lr = 0.01, optimize_atoms = True, 
+    optimize_lattice = False, **kwargs) -> IStructure:
     
     starting_structures = [dataset.structures[j].copy(
-      ) if j < dataset.N else dataset.sample(
+      ) if j < dataset.N else sampler.sample(
       ) for j in range(starts)]
     
     device = model.device
@@ -26,15 +30,23 @@ class Adam(BaseOptimizer):
     natoms = len(starting_structures[0])
     ljrmins = torch.tensor(lj_rmins, device = device)
     best_obj = torch.tensor([float('inf')], device = device)
-    best_x = torch.zeros(3 * natoms, device = device)
+    if optimize_atoms:
+      best_x = torch.zeros(3 * natoms, device = device)
+    if optimize_lattice:
+      best_cell = torch.zeros((3, 3), device = device)
     target = torch.tensor(dataset.target, device = device)
     
     data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
       preprocess = False) for s in starting_structures]
     for i in range(nstarts): # process node features
       reprocess_data(data[i], dataset.config, device, edges = False)
-                        
-    optimizer = torch.optim.Adam([d.pos for d in data], lr=lr)
+    
+    to_optimize = []
+    if optimize_atoms:
+      to_optimize += [d.pos for d in data]
+    if optimize_lattice:
+      to_optimize += [d.cell for d in data]
+    optimizer = torch.optim.Adam(to_optimize, lr=lr)
     
     split = int(np.ceil(np.log2(nstarts)))
     orig_split = split
@@ -45,7 +57,10 @@ class Adam(BaseOptimizer):
         try:
           optimizer.zero_grad(set_to_none=True)
           for j in range(nstarts):
-            data[j].pos.requires_grad_()
+            if optimize_atoms:
+              data[j].pos.requires_grad_()
+            if optimize_lattice:
+              data[j].cell.requires_grad_()
             reprocess_data(data[j], dataset.config, device, nodes = False)
 
           for k in range(2 ** (orig_split - split)):
@@ -64,8 +79,12 @@ class Adam(BaseOptimizer):
             obj_total.backward()
             if (torch.min(objs) < best_obj).item():
               best_obj = torch.min(objs).detach()
-              best_x = data[starti + torch.argmin(objs).item()].pos.detach(
-                ).flatten()
+              if optimize_atoms:
+                best_x = data[starti + torch.argmin(objs).item()].pos.detach(
+                  ).flatten()
+              if optimize_lattice:
+                best_cell = data[starti + torch.argmin(objs).item(
+                  )].cell[0].detach()
             del predictions, objs, obj_total
           predicted = True
         except torch.cuda.OutOfMemoryError:
@@ -75,9 +94,18 @@ class Adam(BaseOptimizer):
       if i != iters_per_start - 1:
         optimizer.step()
 
-    new_x = best_x.detach().cpu().numpy() 
+    if optimize_atoms:
+      new_x = best_x.detach().cpu().numpy()
+    if optimize_lattice:
+      new_cell = best_cell.detach().cpu().numpy()
+    
     del best_obj, best_x, target, data
     new_structure = starting_structures[0].copy()
-    for i in range(len(new_structure)):
-      new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
+
+    if optimize_lattice:
+      new_structure.lattice = Lattice(new_cell)
+    if optimize_atoms:
+      for i in range(len(new_structure)):
+        new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
+    
     return new_structure
