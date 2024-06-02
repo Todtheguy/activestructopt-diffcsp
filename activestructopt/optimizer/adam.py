@@ -93,6 +93,7 @@ class Adam(BaseOptimizer):
       
       if i != iters_per_start - 1:
         optimizer.step()
+        print(data[0].cell)
 
     if optimize_atoms:
       new_x = best_x.detach().cpu().numpy()
