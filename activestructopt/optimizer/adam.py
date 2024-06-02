@@ -109,4 +109,6 @@ class Adam(BaseOptimizer):
       for i in range(len(new_structure)):
         new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
     
+    assert False
+
     return new_structure
