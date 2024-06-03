@@ -23,7 +23,6 @@ class KFoldsDataset(BaseDataset):
     self.simfunc = simulation
     self.structures = [initial_structure.copy(
       ) if i == 0 else sampler.sample() for i in range(N)]
-    print(self.structures)
     
     y_promises = [copy.deepcopy(simulation) for _ in self.structures]
     for i, s in enumerate(self.structures):
