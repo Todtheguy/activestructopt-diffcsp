@@ -11,19 +11,23 @@ from pymatgen.core import Lattice
 import torch
 import numpy as np
 
-@registry.register_optimizer("Adam")
-class Adam(BaseOptimizer):
+@registry.register_optimizer("Torch")
+class Torch(BaseOptimizer):
   def __init__(self) -> None:
     pass
 
   def run(self, model: BaseModel, dataset: BaseDataset, 
     objective: BaseObjective, sampler: BaseSampler, 
-    starts = 128, iters_per_start = 100, lr = 0.01, optimize_atoms = True, 
-    optimize_lattice = False, **kwargs) -> IStructure:
+    starts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
+    optimizer_args = {}, optimize_atoms = True, 
+    optimize_lattice = False, save_obj_values = False, **kwargs) -> IStructure:
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else sampler.sample(
       ) for j in range(starts)]
+
+    obj_values = torch.zeros((iters_per_start, starts), device = 'cpu'
+      ) if save_obj_values else None
     
     device = model.device
     nstarts = len(starting_structures)
@@ -46,7 +50,8 @@ class Adam(BaseOptimizer):
       to_optimize += [d.pos for d in data]
     if optimize_lattice:
       to_optimize += [d.cell for d in data]
-    optimizer = torch.optim.Adam(to_optimize, lr=lr)
+    optimizer = getattr(torch.optim, optimizer)(to_optimize, lr = lr, 
+      **(optimizer_args))
     
     split = int(np.ceil(np.log2(nstarts)))
     orig_split = split
@@ -75,6 +80,8 @@ class Adam(BaseOptimizer):
               objs[j] += lj_repulsion(data[starti + j], ljrmins)
               obj_total += lj_repulsion(data[starti + j], ljrmins)
               objs[j] = objs[j].detach()
+              if save_obj_values:
+                obj_values[i, starti + j] = objs[j].detach().cpu()
 
             obj_total.backward()
             if (torch.min(objs) < best_obj).item():
@@ -108,4 +115,4 @@ class Adam(BaseOptimizer):
       for i in range(len(new_structure)):
         new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
     
-    return new_structure
+    return new_structure, obj_values

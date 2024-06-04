@@ -16,6 +16,7 @@ class ActiveLearning():
     self.index = index
 
     self.model_errs = []
+    self.opt_obj_values = []
     self.target_structure = target_structure
     if not (target_structure is None):
       self.target_predictions = []
@@ -69,8 +70,10 @@ class ActiveLearning():
         optimizer_cls = registry.get_optimizer_class(
           self.config['aso_params']['optimizer']['name'])
 
-        new_structure = optimizer_cls().run(self.model, self.dataset, objective, 
-          self.sampler, **(self.config['aso_params']['optimizer']['args']))
+        new_structure, obj_values = optimizer_cls().run(self.model, 
+          self.dataset, objective, self.sampler, 
+          **(self.config['aso_params']['optimizer']['args']))
+        self.opt_obj_values.append(obj_values)
         
         self.dataset.update(new_structure)
 
@@ -94,6 +97,7 @@ class ActiveLearning():
           'ys': self.dataset.ys,
           'mismatches': self.dataset.mismatches,
           'model_errs': self.model_errs,
+          'opt_obj_values': self.opt_obj_values,
           'error': self.error,}
     if not (self.target_structure is None):
       res['target_predictions'] = self.target_predictions
