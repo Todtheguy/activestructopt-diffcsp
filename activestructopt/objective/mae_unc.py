@@ -3,7 +3,7 @@ from activestructopt.objective.base import BaseObjective
 from activestructopt.common.registry import registry
 
 @registry.register_objective("MAEUncertainty")
-class MAE(BaseObjective):
+class MAEUncertainty(BaseObjective):
   def __init__(self, λ = 0.1, **kwargs) -> None:
     self.λ = λ
 
