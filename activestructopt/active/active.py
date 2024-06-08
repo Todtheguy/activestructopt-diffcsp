@@ -16,7 +16,9 @@ class ActiveLearning():
     self.index = index
 
     self.model_errs = []
+    self.model_metrics = []
     self.opt_obj_values = []
+    self.new_structure_predictions = []
     self.target_structure = target_structure
     if not (target_structure is None):
       self.target_predictions = []
@@ -56,8 +58,10 @@ class ActiveLearning():
             self.config['aso_params']['optimizer']['switch_profiles']), 
             -(active_steps - i))]
         
-        model_err = self.model.train(self.dataset, **(train_profile))
+        model_err, metrics = self.model.train(self.dataset, **(train_profile))
         self.model_errs.append(model_err)
+        self.model_metrics.append(metrics)
+
         if not (self.target_structure is None):
           with inference_mode():
             self.target_predictions.append(self.model.predict(
@@ -76,6 +80,10 @@ class ActiveLearning():
         self.opt_obj_values.append(obj_values)
         
         self.dataset.update(new_structure)
+        with inference_mode():
+          self.new_structure_predictions.append(self.model.predict(
+            new_structure, 
+            mask = self.dataset.simfunc.mask).cpu().numpy())
 
         if print_mismatches:
           print(self.dataset.mismatches[-1])
@@ -97,7 +105,9 @@ class ActiveLearning():
           'ys': self.dataset.ys,
           'mismatches': self.dataset.mismatches,
           'model_errs': self.model_errs,
+          'model_metrics': self.model_metrics,
           'opt_obj_values': self.opt_obj_values,
+          'new_structure_predictions': self.new_structure_predictions,
           'error': self.error,}
     if not (self.target_structure is None):
       res['target_predictions'] = self.target_predictions

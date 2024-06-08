@@ -44,7 +44,7 @@ class GNNEnsemble(BaseModel):
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
     gnn_mae, _, _ = self.set_scalar_calibration(dataset)
-    return gnn_mae
+    return gnn_mae, [self.ensemble[i].trainer.metrics for i in range(self.k)]
 
   def predict(self, structure, prepared = False, mask = None, **kwargs):
     def fmodel(params, buffers, x):
