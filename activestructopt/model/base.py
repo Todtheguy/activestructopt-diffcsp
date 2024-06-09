@@ -6,6 +6,8 @@ from matdeeplearn.trainers.base_trainer import BaseTrainer
 from torch import distributed as dist
 import torch
 import os
+import logging
+import sys
 
 class BaseModel(ABC):
   @abstractmethod
@@ -23,6 +25,11 @@ class BaseModel(ABC):
 class Runner:
   def __init__(self):
     self.config = None
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setLevel(logging.DEBUG)                               
+    root_logger.addHandler(sh)
 
   def __call__(self, config, args, train_data, val_data):
     with new_trainer_context(args = args, config = config) as ctx:
