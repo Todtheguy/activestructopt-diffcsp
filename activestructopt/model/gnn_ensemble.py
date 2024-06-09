@@ -33,9 +33,8 @@ class GNNEnsemble(BaseModel):
       self.ensemble[i] = new_runner
       self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
-      # https://stackoverflow.com/questions/1752107/how-to-loop-until-eof-in-python
-      for line in iter(lambda: self.ensemble[i].logstream.readline(), ""):
-        print(line)
+      # https://stackoverflow.com/questions/30764890/how-to-write-the-output-of-iostream-to-buffer-python3
+      print(self.ensemble[i].logstream.getvalue())
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
       ))).get_device()
