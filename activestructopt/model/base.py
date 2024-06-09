@@ -8,6 +8,7 @@ import torch
 import os
 import logging
 import sys
+from io import StringIO
 
 class BaseModel(ABC):
   @abstractmethod
@@ -25,9 +26,10 @@ class BaseModel(ABC):
 class Runner:
   def __init__(self):
     self.config = None
+    self.logstream = StringIO()
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
-    sh = logging.StreamHandler(sys.stdout)
+    sh = logging.StreamHandler(self.logstream)
     sh.setLevel(logging.DEBUG)                               
     root_logger.addHandler(sh)
 
