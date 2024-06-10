@@ -51,7 +51,7 @@ torchmd_config = {
     'patience': 10,
     'min_lr': 1e-05,
     'threshold': 0.0002}},
-  'verbosity': 5,
+  'verbosity': 1,
   'batch_tqdm': False},
  'dataset': {'name': 'test_data',
   'processed': False,
