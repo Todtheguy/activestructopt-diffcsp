@@ -23,6 +23,9 @@ class GNNEnsemble(BaseModel):
   def train(self, dataset: BaseDataset, iterations = 500, lr = 0.001, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
+    metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
+      'time': []} for _ in range(self.k)]
+
     for i in range(self.k):
       new_runner = Runner()
       new_runner(self.config, ConfigSetup('train'), 
@@ -35,7 +38,14 @@ class GNNEnsemble(BaseModel):
       self.ensemble[i].trainer.model[0].eval()
       for l in self.ensemble[i].logstream.getvalue().split('\n'):
         if l.startswith('Epoch: '):
-          print(l)
+          metric_tokens = l.split()
+          metrics[i]['epoch'].append(int(metric_tokens[1][:-1]))
+          metrics[i]['lr'].append(float(metric_tokens[4][:-1]))
+          metrics[i]['train_err'].append(float(metric_tokens[7][:-1]))
+          metrics[i]['val_error'].append(float(metric_tokens[10][:-1]))
+          metrics[i]['time'].append(float(metric_tokens[15][:-1]))
+
+      print(metrics[i])
       # https://stackoverflow.com/questions/4330812/how-do-i-clear-a-stringio-object
       self.ensemble[i].logstream.seek(0)
       self.ensemble[i].logstream.truncate(0)
