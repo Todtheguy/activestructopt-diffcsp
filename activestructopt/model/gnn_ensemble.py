@@ -20,22 +20,32 @@ class GNNEnsemble(BaseModel):
     self.scalar = 1.0
     self.device = 'cpu'
   
-  def train(self, dataset: BaseDataset, iterations = 500, lr = 0.001, **kwargs):
+  def train(self, dataset: BaseDataset, iterations = 500, lr = 0.001, 
+    from_scratch = False, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
     metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
       'time': []} for _ in range(self.k)]
 
     for i in range(self.k):
+      # Create new runner, with config and datasets
       new_runner = Runner()
       new_runner(self.config, ConfigSetup('train'), 
                             dataset.datasets[i][0], dataset.datasets[i][1])
-      if self.ensemble[i] is not None:
+
+      # If applicable, use the old model
+      if self.ensemble[i] is not None and not from_scratch:
         new_runner.trainer.model[0].load_state_dict(
           self.ensemble[i].trainer.model[0].state_dict())
       self.ensemble[i] = new_runner
+      
+      # Train
       self.ensemble[i].train()
+      
+      # Set to evaluation mode
       self.ensemble[i].trainer.model[0].eval()
+
+      # Collect metrics from logger
       for l in self.ensemble[i].logstream.getvalue().split('\n'):
         if l.startswith('Epoch: '):
           metric_tokens = l.split()
@@ -44,10 +54,12 @@ class GNNEnsemble(BaseModel):
           metrics[i]['train_err'].append(float(metric_tokens[7][:-1]))
           metrics[i]['val_error'].append(float(metric_tokens[10][:-1]))
           metrics[i]['time'].append(float(metric_tokens[15][:-1]))
-
+      
+      # Erase logger
       # https://stackoverflow.com/questions/4330812/how-do-i-clear-a-stringio-object
       self.ensemble[i].logstream.seek(0)
       self.ensemble[i].logstream.truncate(0)
+      
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
       ))).get_device()
