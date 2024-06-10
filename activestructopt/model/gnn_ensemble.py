@@ -45,7 +45,6 @@ class GNNEnsemble(BaseModel):
           metrics[i]['val_error'].append(float(metric_tokens[10][:-1]))
           metrics[i]['time'].append(float(metric_tokens[15][:-1]))
 
-      print(metrics[i])
       # https://stackoverflow.com/questions/4330812/how-do-i-clear-a-stringio-object
       self.ensemble[i].logstream.seek(0)
       self.ensemble[i].logstream.truncate(0)
@@ -60,7 +59,7 @@ class GNNEnsemble(BaseModel):
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
     gnn_mae, _, _ = self.set_scalar_calibration(dataset)
-    return gnn_mae, [self.ensemble[i].trainer.metrics for i in range(self.k)]
+    return gnn_mae, metrics
 
   def predict(self, structure, prepared = False, mask = None, **kwargs):
     def fmodel(params, buffers, x):
