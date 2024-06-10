@@ -33,8 +33,12 @@ class GNNEnsemble(BaseModel):
       self.ensemble[i] = new_runner
       self.ensemble[i].train()
       self.ensemble[i].trainer.model[0].eval()
-      # https://stackoverflow.com/questions/30764890/how-to-write-the-output-of-iostream-to-buffer-python3
-      print(self.ensemble[i].logstream.getvalue())
+      for l in self.ensemble[i].logstream.getvalue().split('\n'):
+        if l.startswith('Epoch: '):
+          print(l)
+      # https://stackoverflow.com/questions/4330812/how-do-i-clear-a-stringio-object
+      self.ensemble[i].logstream.seek(0)
+      self.ensemble[i].logstream.truncate(0)
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
     device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
       ))).get_device()
