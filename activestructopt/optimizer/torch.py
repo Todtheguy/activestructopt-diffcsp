@@ -83,7 +83,6 @@ class Torch(BaseOptimizer):
               if save_obj_values:
                 obj_values[i, starti + j] = objs[j].detach().cpu()
 
-            obj_total.backward()
             if (torch.min(objs) < best_obj).item():
               best_obj = torch.min(objs).detach()
               if optimize_atoms:
@@ -92,6 +91,9 @@ class Torch(BaseOptimizer):
               if optimize_lattice:
                 best_cell = data[starti + torch.argmin(objs).item(
                   )].cell[0].detach()
+
+            if i < (iters_per_start - 1):
+              obj_total.backward()
             del predictions, objs, obj_total
           predicted = True
         except torch.cuda.OutOfMemoryError:
