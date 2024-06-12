@@ -92,7 +92,7 @@ class Torch(BaseOptimizer):
                 best_cell = data[starti + torch.argmin(objs).item(
                   )].cell[0].detach()
 
-            if i < (iters_per_start - 1):
+            if i != iters_per_start - 1:
               obj_total.backward()
             del predictions, objs, obj_total
           predicted = True
