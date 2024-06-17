@@ -50,7 +50,8 @@ class GNNEnsemble(BaseModel):
         rand_state_dict = new_runner.trainer.model[0].state_dict()
         for param_tensor in prev_state_dict:
           prev_state_dict[param_tensor] = (transfer * 
-            prev_state_dict[param_tensor]) + ((1 - transfer) * rand_state_dict)
+            prev_state_dict[param_tensor]) + ((1 - transfer) * 
+            rand_state_dict[param_tensor])
         new_runner.trainer.model[0].load_state_dict(prev_state_dict)
       self.ensemble[i] = new_runner
       
