@@ -27,7 +27,17 @@ class GNNEnsemble(BaseModel):
     metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
       'time': []} for _ in range(self.k)]
 
+    fold = self.k - 1
+    for i in range(self.k - 1):
+      if len(dataset[i][1]) < len(dataset[i + 1][1]):
+        fold = i
+        break
+    fold = (fold + 1) % self.k
+
     for i in range(self.k):
+      if i == fold:
+        break
+
       # Create new runner, with config and datasets
       new_runner = Runner()
       self.config['task']['seed'] = self.k * self.updates + i
