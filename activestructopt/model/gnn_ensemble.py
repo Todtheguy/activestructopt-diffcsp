@@ -1,8 +1,7 @@
 from activestructopt.common.dataloader import prepare_data
 from activestructopt.model.base import BaseModel, Runner, ConfigSetup
-from activestructopt.dataset.base import BaseDataset
+from activestructopt.dataset.kfolds import KFoldsDataset
 from activestructopt.common.registry import registry
-from pymatgen.core.structure import IStructure
 import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
@@ -21,7 +20,7 @@ class GNNEnsemble(BaseModel):
     self.device = 'cpu'
     self.updates = 0
   
-  def train(self, dataset: BaseDataset, iterations = 500, lr = 0.001, 
+  def train(self, dataset: KFoldsDataset, iterations = 500, lr = 0.001, 
     from_scratch = False, transfer = 0.99, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
@@ -101,7 +100,7 @@ class GNNEnsemble(BaseModel):
 
     return torch.stack((mean, std))
 
-  def set_scalar_calibration(self, dataset: BaseDataset):
+  def set_scalar_calibration(self, dataset: KFoldsDataset):
     self.scalar = 1.0
     with torch.inference_mode():
       test_res = self.predict(dataset.test_data, prepared = True, 
