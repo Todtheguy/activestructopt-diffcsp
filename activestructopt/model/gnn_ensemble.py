@@ -29,7 +29,7 @@ class GNNEnsemble(BaseModel):
 
     fold = self.k - 1
     for i in range(self.k - 1):
-      if len(dataset[i][1]) < len(dataset[i + 1][1]):
+      if len(dataset.datasets[i][1]) < len(dataset.datasets[i + 1][1]):
         fold = i
         break
     fold = (fold + 1) % self.k
