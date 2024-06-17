@@ -5,6 +5,7 @@ import numpy as np
 from gc import collect
 from pickle import dump
 from os.path import join as pathjoin
+import traceback
 
 class ActiveLearning():
   def __init__(self, simfunc, target, config, initial_structure, 
@@ -95,6 +96,7 @@ class ActiveLearning():
           self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
             i) + ".pkl"))
     except Exception as err:
+      print(traceback.format_exc())
       print(err)
       self.error = err
 
