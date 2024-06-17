@@ -19,9 +19,10 @@ class GNNEnsemble(BaseModel):
     self.ensemble = [None for _ in range(k)]
     self.scalar = 1.0
     self.device = 'cpu'
+    self.updates = 0
   
   def train(self, dataset: BaseDataset, iterations = 500, lr = 0.001, 
-    from_scratch = False, **kwargs):
+    from_scratch = False, transfer = 0.99, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
     metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
@@ -30,13 +31,18 @@ class GNNEnsemble(BaseModel):
     for i in range(self.k):
       # Create new runner, with config and datasets
       new_runner = Runner()
+      self.config['task']['seed'] = self.k * self.updates + i
       new_runner(self.config, ConfigSetup('train'), 
                             dataset.datasets[i][0], dataset.datasets[i][1])
 
       # If applicable, use the old model
       if self.ensemble[i] is not None and not from_scratch:
-        new_runner.trainer.model[0].load_state_dict(
-          self.ensemble[i].trainer.model[0].state_dict())
+        prev_state_dict = self.ensemble[i].trainer.model[0].state_dict()
+        rand_state_dict = new_runner.trainer.model[0].state_dict()
+        for param_tensor in prev_state_dict:
+          prev_state_dict[param_tensor] = (transfer * 
+            prev_state_dict[param_tensor]) + ((1 - transfer) * rand_state_dict)
+        new_runner.trainer.model[0].load_state_dict(prev_state_dict)
       self.ensemble[i] = new_runner
       
       # Train
@@ -71,6 +77,8 @@ class GNNEnsemble(BaseModel):
     base_model = copy.deepcopy(models[0])
     self.base_model = base_model.to('meta')
     gnn_mae, _, _ = self.set_scalar_calibration(dataset)
+    self.updates = self.updates + 1
+    
     return gnn_mae, metrics
 
   def predict(self, structure, prepared = False, mask = None, **kwargs):
