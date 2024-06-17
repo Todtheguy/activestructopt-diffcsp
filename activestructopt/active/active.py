@@ -95,6 +95,7 @@ class ActiveLearning():
           self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
             i) + ".pkl"))
     except Exception as err:
+      print(err)
       self.error = err
 
 
