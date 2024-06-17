@@ -60,17 +60,22 @@ class Torch(BaseOptimizer):
       predicted = False
       while not predicted:
         try:
-          optimizer.zero_grad(set_to_none=True)
-          for j in range(nstarts):
-            if optimize_atoms:
-              data[j].pos.requires_grad_()
-            if optimize_lattice:
-              data[j].cell.requires_grad_()
-            reprocess_data(data[j], dataset.config, device, nodes = False)
-
           for k in range(2 ** (orig_split - split)):
             starti = k * (2 ** split)
             stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
+
+            optimizer.zero_grad()
+            for j in range(nstarts):
+              data[j].cell.requires_grad_(False)
+              data[j].pos.requires_grad_(False)
+            for j in range(stopi - starti + 1):
+              if optimize_atoms:
+                data[starti + j].pos.requires_grad_()
+              if optimize_lattice:
+                data[starti + j].cell.requires_grad_()
+              reprocess_data(data[starti + j], dataset.config, device, 
+                nodes = False)
+
             predictions = model.predict(data[starti:(stopi+1)], 
               prepared = True, mask = dataset.simfunc.mask)
 
@@ -94,14 +99,12 @@ class Torch(BaseOptimizer):
 
             if i != iters_per_start - 1:
               obj_total.backward()
+              optimizer.step()
             del predictions, objs, obj_total
           predicted = True
         except torch.cuda.OutOfMemoryError:
           split -= 1
           assert split >= 0, "Out of memory with only one structure"
-      
-      if i != iters_per_start - 1:
-        optimizer.step()
 
     if optimize_atoms:
       new_x = best_x.detach().cpu().numpy()
