@@ -21,7 +21,7 @@ class GNNEnsemble(BaseModel):
     self.updates = 0
   
   def train(self, dataset: KFoldsDataset, iterations = 500, lr = 0.001, 
-    from_scratch = False, transfer = 0.99, **kwargs):
+    from_scratch = False, transfer = 1.0, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
     metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
