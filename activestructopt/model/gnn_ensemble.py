@@ -35,8 +35,8 @@ class GNNEnsemble(BaseModel):
     fold = (fold + 1) % self.k
 
     for i in range(self.k):
-      if i == fold and self.ensemble[i] is not None:
-        break
+      #if i == fold and self.ensemble[i] is not None:
+      #  break
 
       # Create new runner, with config and datasets
       new_runner = Runner()
