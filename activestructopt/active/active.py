@@ -5,6 +5,7 @@ import numpy as np
 from gc import collect
 from pickle import dump
 from os.path import join as pathjoin
+import os
 import traceback
 
 class ActiveLearning():
@@ -95,6 +96,10 @@ class ActiveLearning():
         if save_progress_dir is not None:
           self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
             i) + ".pkl"))
+          if os.path.exists(pathjoin(save_progress_dir, str(self.index
+            ) + "_" + str(i - 1) + ".pkl")):
+            os.remove(pathjoin(save_progress_dir, str(self.index) + "_" + str(
+              i - 1) + ".pkl"))
     except Exception as err:
       print(traceback.format_exc())
       print(err)
