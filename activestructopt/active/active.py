@@ -102,18 +102,7 @@ class ActiveLearning():
 
 
   def save(self, filename, additional_data = {}):
-    res = {'index': self.index,
-          'target': self.dataset.target,
-          'structures': self.dataset.structures,
-          'ys': self.dataset.ys,
-          'mismatches': self.dataset.mismatches,
-          'model_errs': self.model_errs,
-          'model_metrics': self.model_metrics,
-          'opt_obj_values': self.opt_obj_values,
-          'new_structure_predictions': self.new_structure_predictions,
-          'error': self.error,}
-    if not (self.target_structure is None):
-      res['target_predictions'] = self.target_predictions
+    res = {'al': self}
     for k, v in additional_data.items():
       res[k] = v
     with open(filename, "wb") as file:
