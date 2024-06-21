@@ -102,6 +102,6 @@ torchmd_config = {
     'optimize_lattice': False, 
     'save_obj_values': True}, 
    'switch_profiles': [20],
-   'profiles': [{'name': 'MAEUncertainty', 'args': {'λ': 0.5}}, 
+   'profiles': [{'name': 'MAEUncertainty', 'args': {'λ': 0.1}}, 
     {'name': 'MAE', 'args': {}}],
    }}}
