@@ -89,7 +89,8 @@ class GNNEnsemble(BaseModel):
     gnn_mae, _, _ = self.set_scalar_calibration(dataset)
     self.updates = self.updates + 1
     
-    return gnn_mae, metrics
+    return gnn_mae, metrics, [self.ensemble[i].trainer.model[0].state_dict(
+      ) for i in range(self.k)]
 
   def predict(self, structure, prepared = False, mask = None, **kwargs):
     def fmodel(params, buffers, x):

@@ -17,6 +17,7 @@ class ActiveLearning():
     self.config = simfunc.setup_config(config)
     self.index = index
 
+    self.model_params = []
     self.model_errs = []
     self.model_metrics = []
     self.opt_obj_values = []
@@ -60,7 +61,8 @@ class ActiveLearning():
             self.config['aso_params']['optimizer']['switch_profiles']), 
             -(active_steps - i))]
         
-        model_err, metrics = self.model.train(self.dataset, **(train_profile))
+        model_err, metrics, self.model_params = self.model.train(
+          self.dataset, **(train_profile))
         self.model_errs.append(model_err)
         self.model_metrics.append(metrics)
 
@@ -107,7 +109,19 @@ class ActiveLearning():
 
 
   def save(self, filename, additional_data = {}):
-    res = {'al': self}
+    res = {'index': self.index,
+          'target': self.dataset.target,
+          'structures': self.dataset.structures,
+          'ys': self.dataset.ys,
+          'mismatches': self.dataset.mismatches,
+          'model_errs': self.model_errs,
+          'model_metrics': self.model_metrics,
+          'model_params': self.model_params,
+          'opt_obj_values': self.opt_obj_values,
+          'new_structure_predictions': self.new_structure_predictions,
+          'error': self.error,}
+    if not (self.target_structure is None):
+      res['target_predictions'] = self.target_predictions
     for k, v in additional_data.items():
       res[k] = v
     with open(filename, "wb") as file:
