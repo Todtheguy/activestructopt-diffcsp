@@ -50,15 +50,15 @@ class ActiveLearning():
     if progress_file is not None:
       with open(progress_file, 'rb') as f:
         progress = load(f)
-      for i in range(self.dataset.N, len(progress['structures'])):
+      for i in range(self.dataset.start_N, len(progress['structures'])):
         self.dataset.update(progress['structures'][i])
       self.model_params = progress['model_params']
-      self.iteration = len(progress['structures'])
+      self.iteration = len(progress['structures']) - self.dataset.start_N
   
   def optimize(self, print_mismatches = True, save_progress_dir = None):
     try:
       active_steps = self.config['aso_params'][
-        'max_forward_calls'] - self.dataset.N
+        'max_forward_calls'] - self.dataset.start_N
 
       if print_mismatches:
         print(self.dataset.mismatches)

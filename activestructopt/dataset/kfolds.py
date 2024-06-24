@@ -18,6 +18,7 @@ class KFoldsDataset(BaseDataset):
     self.config = config
     self.target = target
     self.initial_structure = initial_structure
+    self.start_N = N
     self.N = N
     self.k = k
     self.simfunc = simulation
