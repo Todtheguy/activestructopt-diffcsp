@@ -21,7 +21,7 @@ class GNNEnsemble(BaseModel):
     self.updates = 0
   
   def train(self, dataset: KFoldsDataset, iterations = 500, lr = 0.001, 
-    from_scratch = False, transfer = 1.0, **kwargs):
+    from_scratch = False, transfer = 1.0, prev_params = None, **kwargs):
     self.config['optim']['max_epochs'] = iterations
     self.config['optim']['lr'] = lr
     metrics = [{'epoch': [], 'lr': [], 'train_err': [], 'val_error': [], 
@@ -44,13 +44,18 @@ class GNNEnsemble(BaseModel):
       new_runner(self.config, ConfigSetup('train'), 
                             dataset.datasets[i][0], dataset.datasets[i][1])
 
+      device = next(iter(new_runner.trainer.model[0].state_dict().values(
+        ))).get_device()
+      device = 'cpu' if device == -1 else 'cuda:' + str(device)
+      self.device = device
+
       # If applicable, use the old model
-      if self.ensemble[i] is not None and not from_scratch:
-        prev_state_dict = self.ensemble[i].trainer.model[0].state_dict()
+      if prev_params is not None and not from_scratch:
+        prev_state_dict = prev_params[i]
         rand_state_dict = new_runner.trainer.model[0].state_dict()
         for param_tensor in prev_state_dict:
           prev_state_dict[param_tensor] = (transfer * 
-            prev_state_dict[param_tensor]) + ((1 - transfer) * 
+            prev_state_dict[param_tensor].to(device)) + ((1 - transfer) * 
             rand_state_dict[param_tensor])
         new_runner.trainer.model[0].load_state_dict(prev_state_dict)
       self.ensemble[i] = new_runner
@@ -77,10 +82,7 @@ class GNNEnsemble(BaseModel):
       self.ensemble[i].logstream.truncate(0)
       
       #self.ensemble[i].trainer.model[0] = compile(self.ensemble[i].trainer.model)
-    device = next(iter(self.ensemble[0].trainer.model[0].state_dict().values(
-      ))).get_device()
-    device = 'cpu' if device == -1 else 'cuda:' + str(device)
-    self.device = device
+    
     #https://pytorch.org/tutorials/intermediate/ensembling.html
     models = [self.ensemble[i].trainer.model[0] for i in range(self.k)]
     self.params, self.buffers = stack_module_state(models)

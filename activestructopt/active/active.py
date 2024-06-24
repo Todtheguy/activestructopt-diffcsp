@@ -3,21 +3,24 @@ from torch.cuda import empty_cache
 from torch import inference_mode
 import numpy as np
 from gc import collect
-from pickle import dump
+from pickle import dump, load
 from os.path import join as pathjoin
-import os
-import traceback
+from os.path import exists as pathexists
+from os import remove
+from copy import deepcopy
+from traceback import format_exc
 
 class ActiveLearning():
   def __init__(self, simfunc, target, config, initial_structure, 
-    index = -1, target_structure = None):
+    index = -1, target_structure = None, progress_file = None):
     setup_imports()
 
     self.simfunc = simfunc
     self.config = simfunc.setup_config(config)
     self.index = index
+    self.iteration = 0
 
-    self.model_params = []
+    self.model_params = None
     self.model_errs = []
     self.model_metrics = []
     self.opt_obj_values = []
@@ -41,7 +44,16 @@ class ActiveLearning():
     self.model = model_cls(self.config, 
       **(self.config['aso_params']['model']['args']))
 
+    self.traceback = None
     self.error = None
+
+    if progress_file is not None:
+      with open(progress_file, 'rb') as f:
+        progress = load(f)
+      for i in range(self.dataset.N, len(progress['structures'])):
+        self.dataset.update(progress['structures'][i])
+      self.model_params = progress['model_params']
+      self.iteration = len(progress['structures'])
   
   def optimize(self, print_mismatches = True, save_progress_dir = None):
     try:
@@ -51,7 +63,7 @@ class ActiveLearning():
       if print_mismatches:
         print(self.dataset.mismatches)
 
-      for i in range(active_steps):
+      for i in range(self.iteration, active_steps):
         train_profile = self.config['aso_params']['model']['profiles'][
           np.searchsorted(-np.array(
             self.config['aso_params']['model']['switch_profiles']), 
@@ -98,28 +110,31 @@ class ActiveLearning():
         if save_progress_dir is not None:
           self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
             i) + ".pkl"))
-          if os.path.exists(pathjoin(save_progress_dir, str(self.index
-            ) + "_" + str(i - 1) + ".pkl")):
-            os.remove(pathjoin(save_progress_dir, str(self.index) + "_" + str(
-              i - 1) + ".pkl"))
+          prev_progress_file = pathjoin(save_progress_dir, str(self.index
+            ) + "_" + str(i - 1) + ".pkl")
+          if pathexists(prev_progress_file):
+            remove(prev_progress_file)
     except Exception as err:
-      print(traceback.format_exc())
-      print(err)
+      self.traceback = format_exc()
       self.error = err
-
+      print(self.traceback)
+      print(self.error)
 
   def save(self, filename, additional_data = {}):
+    cpu_model_params = deepcopy(self.model_params)
+    for i in range(len(cpu_model_params)):
+      for param_tensor in cpu_model_params[i]:
+        cpu_model_params[i][param_tensor] = cpu_model_params[i][
+          param_tensor].detach().cpu()
     res = {'index': self.index,
-          'target': self.dataset.target,
-          'structures': self.dataset.structures,
-          'ys': self.dataset.ys,
-          'mismatches': self.dataset.mismatches,
+          'dataset': self.dataset,
           'model_errs': self.model_errs,
           'model_metrics': self.model_metrics,
           'model_params': self.model_params,
           'opt_obj_values': self.opt_obj_values,
           'new_structure_predictions': self.new_structure_predictions,
-          'error': self.error,}
+          'error': self.error,
+          'traceback': self.traceback}
     if not (self.target_structure is None):
       res['target_predictions'] = self.target_predictions
     for k, v in additional_data.items():
