@@ -34,10 +34,18 @@ class ActiveLearning():
     self.sampler = sampler_cls(initial_structure, 
       **(self.config['aso_params']['sampler']['args']))
 
-    dataset_cls = registry.get_dataset_class(
-      self.config['aso_params']['dataset']['name'])
-    self.dataset = dataset_cls(simfunc, self.sampler, initial_structure, target,
-      self.config['dataset'], **(self.config['aso_params']['dataset']['args']))
+    if progress_file is not None:
+      with open(progress_file, 'rb') as f:
+        progress = load(f)
+      self.dataset = progress['dataset']
+      self.model_params = progress['model_params']
+      self.iteration = len(progress['structures']) - self.dataset.start_N
+    else:
+      dataset_cls = registry.get_dataset_class(
+        self.config['aso_params']['dataset']['name'])
+      self.dataset = dataset_cls(simfunc, self.sampler, initial_structure, 
+        target, self.config['dataset'], **(
+        self.config['aso_params']['dataset']['args']))
 
     model_cls = registry.get_model_class(
       self.config['aso_params']['model']['name'])
@@ -46,14 +54,6 @@ class ActiveLearning():
 
     self.traceback = None
     self.error = None
-
-    if progress_file is not None:
-      with open(progress_file, 'rb') as f:
-        progress = load(f)
-      for i in range(self.dataset.start_N, len(progress['structures'])):
-        self.dataset.update(progress['structures'][i])
-      self.model_params = progress['model_params']
-      self.iteration = len(progress['structures']) - self.dataset.start_N
   
   def optimize(self, print_mismatches = True, save_progress_dir = None):
     try:
