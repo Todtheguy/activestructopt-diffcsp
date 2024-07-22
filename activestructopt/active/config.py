@@ -105,3 +105,20 @@ torchmd_config = {
    'profiles': [{'name': 'MAEUncertainty', 'args': {'λ': 0.1}}, 
     {'name': 'MAE', 'args': {}}],
    }}}
+
+rmc_config = {
+ 'dataset': {},
+ 'aso_params': {'max_forward_calls': 100,
+  'sampler': {'name': 'Perturbation', 'args': {'perturbrmin': 0.1, 
+   'perturbrmax': 0.1, 
+   'perturblmax': 0.0, 
+   'perturbθmax': 0.0}},
+  'dataset': {'name': 'RMCList', 'args': {'seed': 0, 'σ': 0.0025}},
+  'model': {'name': 'NoModel', 'args': {}, 
+   'switch_profiles': [], 'profiles': [{}]},
+  'optimizer': {'name': 'RMCStep',
+   'args': {}, 
+   'switch_profiles': [],
+   'profiles': [{'name': 'MAE', 'args': {}}],
+   }}}
+   

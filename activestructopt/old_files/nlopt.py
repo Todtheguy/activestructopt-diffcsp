@@ -1,6 +1,6 @@
 # https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/
 
-import nlopt
+import activestructopt.old_files.nlopt as nlopt
 import numpy as np
 from activestructopt.common.constraints import lj_repulsion_pymatgen
 
