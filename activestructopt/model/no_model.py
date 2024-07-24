@@ -12,4 +12,4 @@ class NoModel(BaseModel):
     return None, None, torch.empty(0)
 
   def predict(self, structure, **kwargs):
-    return None
+    return torch.empty(0)
