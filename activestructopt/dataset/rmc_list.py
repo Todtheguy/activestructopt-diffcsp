@@ -15,6 +15,7 @@ class RMCList(BaseDataset):
     self.simfunc = simulation
     self.N = 1
     self.start_N = 1
+    self.target = target
     self.structures = [initial_structure.copy()]
     y_promise = copy.deepcopy(simulation)
     y_promise.get(self.structures[0])
