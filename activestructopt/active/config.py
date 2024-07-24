@@ -107,7 +107,7 @@ torchmd_config = {
    }}}
 
 rmc_config = {
- 'dataset': {},
+ 'dataset': {'preprocess_params': {'prediction_level': 'graph'}},
  'aso_params': {'max_forward_calls': 100,
   'sampler': {'name': 'Perturbation', 'args': {'perturbrmin': 0.1, 
    'perturbrmax': 0.1, 
