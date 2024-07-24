@@ -2,6 +2,7 @@ from activestructopt.dataset.base import BaseDataset
 from activestructopt.simulation.base import BaseSimulation
 from activestructopt.sampler.base import BaseSampler
 from pymatgen.core.structure import IStructure
+from activestructopt.common.registry import registry
 import numpy as np
 import copy
 
