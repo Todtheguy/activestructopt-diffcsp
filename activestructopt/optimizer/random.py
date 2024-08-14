@@ -7,7 +7,7 @@ from activestructopt.common.registry import registry
 from pymatgen.core.structure import IStructure
 
 @registry.register_optimizer("Random")
-class Torch(BaseOptimizer):
+class Random(BaseOptimizer):
   def __init__(self) -> None:
     pass
 

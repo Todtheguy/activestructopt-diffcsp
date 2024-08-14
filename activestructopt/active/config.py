@@ -122,3 +122,19 @@ rmc_config = {
    'profiles': [{'name': 'MAE', 'args': {}}],
    }}}
    
+bogp_config = {
+'dataset': {'preprocess_params': {'prediction_level': 'graph'}},
+'aso_params': {'max_forward_calls': 100,
+'sampler': {'name': 'Perturbation', 'args': {'perturbrmin': 0.1, 
+  'perturbrmax': 0.1, 
+  'perturblmax': 0.0, 
+  'perturbθmax': 0.0}},
+'dataset': {'name': 'BOSet', 'args': {'seed': 0, 'N': 30}},
+'model': {'name': 'GaussianProcess', 'args': {}, 
+  'switch_profiles': [], 'profiles': [{}]},
+'optimizer': {'name': 'BOTorch',
+  'args': {}, 
+  'switch_profiles': [],
+  'profiles': [{'name': 'MAE', 'args': {}}],
+  }}}
+   
