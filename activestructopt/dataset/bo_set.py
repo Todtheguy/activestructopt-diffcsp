@@ -39,7 +39,7 @@ class BOSet(BaseDataset):
     self.N += 1
     y_promise = copy.deepcopy(self.simfunc)
     y_promise.get(new_structure)
-    new_y = torch.tensor(y_promise.resolve())
+    new_y = y_promise.resolve()
     new_mismatch = self.simfunc.get_mismatch(new_y, self.target)
     self.mismatches.append(new_mismatch)
     newY = torch.zeros(self.N, 1, dtype=torch.double)
