@@ -29,7 +29,7 @@ class BOSet(BaseDataset):
     y_promises = [copy.deepcopy(self.simfunc) for _ in self.structures]
     for i, s in enumerate(self.structures):
       y_promises[i].get(s)
-    self.ys = [torch.tensor(yp.resolve()) for yp in y_promises]
+    self.ys = [yp.resolve() for yp in y_promises]
     self.mismatches = [simulation.get_mismatch(y, target) for y in self.ys]
     Y = torch.tensor(-self.mismatches, dtype=torch.double)
     self.Y = -torch.unsqueeze(Y, 1)
