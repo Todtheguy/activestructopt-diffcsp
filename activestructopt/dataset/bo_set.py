@@ -31,7 +31,7 @@ class BOSet(BaseDataset):
       y_promises[i].get(s)
     self.ys = [yp.resolve() for yp in y_promises]
     self.mismatches = [simulation.get_mismatch(y, target) for y in self.ys]
-    Y = torch.tensor(-self.mismatches, dtype=torch.double)
+    Y = -torch.tensor(self.mismatches, dtype=torch.double)
     self.Y = -torch.unsqueeze(Y, 1)
 
   def update(self, new_structure: IStructure):
