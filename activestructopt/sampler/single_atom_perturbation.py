@@ -4,8 +4,6 @@ from activestructopt.common.constraints import lj_reject
 from pymatgen.core.structure import IStructure
 import numpy as np
 
-# STILL A WIP
-
 @registry.register_sampler("SingleAtomPerturbation")
 class SingleAtomPerturbation(BaseSampler):
   def __init__(self, initial_structure: IStructure, perturbrmin = 0.1, 
@@ -23,6 +21,11 @@ class SingleAtomPerturbation(BaseSampler):
       new_structure2 = self.initial_structure.copy()
       new_structure2.perturb(np.random.uniform(
         self.perturbrmin, self.perturbrmax))
+
+      rand_index = np.random.randint(0, len(new_structure))
+
+      new_structure.sites[rand_index].frac_coords = new_structure2.sites[
+        rand_index].frac_coords
       
       new_structure.lattice = new_structure.lattice.from_parameters(
         max(0.0, new_structure.lattice.a * np.random.uniform(
