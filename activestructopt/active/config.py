@@ -137,4 +137,20 @@ bogp_config = {
   'switch_profiles': [],
   'profiles': [{'name': 'MAE', 'args': {}}],
   }}}
+
+random_config = {
+ 'dataset': {'preprocess_params': {'prediction_level': 'graph'}},
+ 'aso_params': {'max_forward_calls': 100,
+  'sampler': {'name': 'Perturbation', 'args': {'perturbrmin': 0.1, 
+   'perturbrmax': 1.0, 
+   'perturblmax': 0.0, 
+   'perturbθmax': 0.0}},
+  'dataset': {'name': 'SimpleDataset', 'args': {'seed': 0}},
+  'model': {'name': 'NoModel', 'args': {}, 
+   'switch_profiles': [], 'profiles': [{}]},
+  'optimizer': {'name': 'Random',
+   'args': {}, 
+   'switch_profiles': [],
+   'profiles': [{'name': 'MAE', 'args': {}}],
+   }}}
    
