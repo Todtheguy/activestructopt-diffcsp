@@ -39,7 +39,7 @@ class ActiveLearning():
         progress = load(f)
       self.dataset = progress['dataset']
       self.model_params = progress['model_params']
-      self.iteration = progress['dataset'].N - progress['dataset'].start_N
+      self.iteration = progress['dataset'].N - progress['dataset'].start_N - 1
     else:
       dataset_cls = registry.get_dataset_class(
         self.config['aso_params']['dataset']['name'])
