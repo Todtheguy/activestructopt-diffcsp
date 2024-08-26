@@ -121,6 +121,7 @@ class Torch(BaseOptimizer):
         try:
           new_structure[i].coords = new_x[(3 * i):(3 * (i + 1))]
         except np.linalg.LinAlgError as e:
+          print(new_structure.lattice)
           print(new_x)
           raise e
 
