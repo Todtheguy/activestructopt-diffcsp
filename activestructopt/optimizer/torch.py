@@ -111,7 +111,7 @@ class Torch(BaseOptimizer):
     if optimize_lattice:
       new_cell = best_cell.detach().cpu().numpy()
     
-    del best_obj, best_x, target, data
+    del best_x, target, data
     new_structure = starting_structures[0].copy()
 
     if optimize_lattice:
