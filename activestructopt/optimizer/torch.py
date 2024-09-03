@@ -88,17 +88,14 @@ class Torch(BaseOptimizer):
               if save_obj_values:
                 obj_values[i, starti + j] = objs[j].detach().cpu()
 
-            if (torch.min(objs) < best_obj).item():
-              best_obj = torch.min(objs).detach()
+            min_obj_iter = torch.min(torch.nan_to_num(objs, nan = torch.inf))
+            if (min_obj_iter < best_obj).item():
+              best_obj = min_obj_iter.detach()
+              obj_arg = torch.argmin(torch.nan_to_num(objs, nan = torch.inf))
               if optimize_atoms:
-                best_x = data[starti + torch.argmin(objs).item()].pos.detach(
-                  ).flatten()
+                best_x = data[starti + obj_arg.item()].pos.detach().flatten()
               if optimize_lattice:
-                best_cell = data[starti + torch.argmin(objs).item(
-                  )].cell[0].detach()
-
-            if i == 0:
-              print(objs)
+                best_cell = data[starti + obj_arg.item()].cell[0].detach()
 
             if i != iters_per_start - 1:
               obj_total.backward()
