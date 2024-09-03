@@ -97,6 +97,9 @@ class Torch(BaseOptimizer):
                 best_cell = data[starti + torch.argmin(objs).item(
                   )].cell[0].detach()
 
+            if i == 0:
+              print(objs)
+
             if i != iters_per_start - 1:
               obj_total.backward()
               optimizer.step()

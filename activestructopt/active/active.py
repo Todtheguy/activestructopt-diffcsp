@@ -95,6 +95,9 @@ class ActiveLearning():
           **(self.config['aso_params']['optimizer']['args']))
         self.opt_obj_values.append(obj_values)
         
+        print(new_structure)
+        for ensemble_i in range(len(metrics)):
+          print(metrics[ensemble_i]['val_error'])
         self.dataset.update(new_structure)
         with inference_mode():
           self.new_structure_predictions.append(self.model.predict(
