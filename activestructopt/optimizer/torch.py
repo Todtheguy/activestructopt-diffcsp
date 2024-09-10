@@ -122,7 +122,7 @@ class Torch(BaseOptimizer):
                     data[starti + j].cell[:, 0, :], torch.cross(
                     data[starti + j].cell[:, 1, :], 
                     data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
-                  data[starti + j].cell.grad = data[
+                  data[starti + j].cell.grad = -data[
                     starti + j].displacement.grad / volume.view(-1, 1, 1)
                   
               optimizer.step()
