@@ -65,9 +65,22 @@ class Torch(BaseOptimizer):
             stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
 
             optimizer.zero_grad()
-            for j in range(nstarts):
+            for j in range(stopi - starti + 1):
               data[j].cell.requires_grad_(False)
               data[j].pos.requires_grad_(False)
+              if optimize_lattice:
+                #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
+                #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
+                #https://github.com/atomistic-machine-learning/schnetpack/issues/165
+                data[j].displacement = torch.zeros((len(data[j]), 3, 3), 
+                  dtype=data[j].pos.dtype, device=data[j].pos.device)            
+                data[j].displacement.requires_grad_(True)
+                symmetric_displacement = 0.5 * (data[j].displacement + 
+                  data[j].displacement.transpose(-1, -2))
+                data[j].pos = data[j].pos + torch.bmm(data[j].pos.unsqueeze(-2),
+                  symmetric_displacement).squeeze(-2)            
+                data[j].cell = data[j].cell + torch.bmm(data[j].cell, 
+                  symmetric_displacement) 
             for j in range(stopi - starti + 1):
               if optimize_atoms:
                 data[starti + j].pos.requires_grad_()
@@ -99,6 +112,15 @@ class Torch(BaseOptimizer):
 
             if i != iters_per_start - 1:
               obj_total.backward()
+              if optimize_lattice:
+                # https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/torchmd_etEarly.py#L229
+                for j in range(stopi - starti + 1):
+                  volume = torch.einsum("zi,zi->z", data[j].cell[:, 0, :], 
+                    torch.cross(data[j].cell[:, 1, :], data[j].cell[:, 2, :], 
+                    dim = 1)).unsqueeze(-1)
+                  data[j].cell.grad = data[j].displacement.grad / volume.view(
+                    -1, 1, 1)
+                  
               optimizer.step()
             del predictions, objs, obj_total
           predicted = True
