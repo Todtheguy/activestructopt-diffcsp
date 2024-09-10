@@ -65,27 +65,30 @@ class Torch(BaseOptimizer):
             stopi = min((k + 1) * (2 ** split) - 1, nstarts - 1)
 
             optimizer.zero_grad()
-            for j in range(stopi - starti + 1):
+            for j in range(nstarts):
               data[j].cell.requires_grad_(False)
               data[j].pos.requires_grad_(False)
-              if optimize_lattice:
-                #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
-                #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
-                #https://github.com/atomistic-machine-learning/schnetpack/issues/165
-                data[j].displacement = torch.zeros((len(data[j]), 3, 3), 
-                  dtype=data[j].pos.dtype, device=data[j].pos.device)            
-                data[j].displacement.requires_grad_(True)
-                symmetric_displacement = 0.5 * (data[j].displacement + 
-                  data[j].displacement.transpose(-1, -2))
-                data[j].pos = data[j].pos + torch.bmm(data[j].pos.unsqueeze(-2),
-                  symmetric_displacement).squeeze(-2)            
-                data[j].cell = data[j].cell + torch.bmm(data[j].cell, 
-                  symmetric_displacement) 
+              
             for j in range(stopi - starti + 1):
               if optimize_atoms:
                 data[starti + j].pos.requires_grad_()
               if optimize_lattice:
                 data[starti + j].cell.requires_grad_()
+              if optimize_lattice:
+                #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
+                #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
+                #https://github.com/atomistic-machine-learning/schnetpack/issues/165
+                data[starti + j].displacement = torch.zeros((len(
+                  data[starti + j]), 3, 3), dtype = data[starti + j].pos.dtype, 
+                  device=data[starti + j].pos.device)            
+                data[starti + j].displacement.requires_grad_(True)
+                symmetric_displacement = 0.5 * (data[starti + j].displacement + 
+                  data[starti + j].displacement.transpose(-1, -2))
+                data[starti + j].pos = data[j].pos + torch.bmm(
+                  data[starti + j].pos.unsqueeze(-2),
+                  symmetric_displacement).squeeze(-2)            
+                data[starti + j].cell = data[starti + j].cell + torch.bmm(
+                  data[starti + j].cell, symmetric_displacement) 
               reprocess_data(data[starti + j], dataset.config, device, 
                 nodes = False)
 
@@ -115,11 +118,12 @@ class Torch(BaseOptimizer):
               if optimize_lattice:
                 # https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/torchmd_etEarly.py#L229
                 for j in range(stopi - starti + 1):
-                  volume = torch.einsum("zi,zi->z", data[j].cell[:, 0, :], 
-                    torch.cross(data[j].cell[:, 1, :], data[j].cell[:, 2, :], 
-                    dim = 1)).unsqueeze(-1)
-                  data[j].cell.grad = data[j].displacement.grad / volume.view(
-                    -1, 1, 1)
+                  volume = torch.einsum("zi,zi->z", 
+                    data[starti + j].cell[:, 0, :], torch.cross(
+                    data[starti + j].cell[:, 1, :], 
+                    data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
+                  data[starti + j].cell.grad = data[
+                    starti + j].displacement.grad / volume.view(-1, 1, 1)
                   
               optimizer.step()
             del predictions, objs, obj_total
