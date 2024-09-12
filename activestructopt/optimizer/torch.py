@@ -78,25 +78,19 @@ class Torch(BaseOptimizer):
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
                 #https://github.com/atomistic-machine-learning/schnetpack/issues/165
-                print(data[starti + j].pos.size())
+                print(data[starti + j])
                 data[starti + j].displacement = torch.zeros((1, 
                   3, 3), dtype = data[starti + j].pos.dtype, 
                   device=data[starti + j].pos.device)
-                print(data[starti + j].displacement.size())
                 data[starti + j].displacement.requires_grad_(True)
                 symmetric_displacement = 0.5 * (data[starti + j].displacement + 
                   data[starti + j].displacement.transpose(-1, -2))
-                print(symmetric_displacement.size())
-                print(data[starti + j].pos.unsqueeze(-2).size())
-                print(symmetric_displacement.size())
-                print(torch.bmm(
-                  data[starti + j].pos.unsqueeze(0),
-                  symmetric_displacement).squeeze(-2).size())
                 data[starti + j].pos = data[starti + j].pos + torch.bmm(
                   data[starti + j].pos.unsqueeze(0),
                   symmetric_displacement).squeeze(-2)            
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
                   data[starti + j].cell, symmetric_displacement) 
+              print(data[starti + j])
               reprocess_data(data[starti + j], dataset.config, device, 
                 nodes = False)
 
