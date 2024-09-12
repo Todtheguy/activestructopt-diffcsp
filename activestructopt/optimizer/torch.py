@@ -78,6 +78,8 @@ class Torch(BaseOptimizer):
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
                 #https://github.com/atomistic-machine-learning/schnetpack/issues/165
+                print(data[starti + j].pos.size())
+                print(len(data[starti + j]))
                 data[starti + j].displacement = torch.zeros((len(
                   data[starti + j]), 3, 3), dtype = data[starti + j].pos.dtype, 
                   device=data[starti + j].pos.device)            
