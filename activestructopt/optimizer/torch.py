@@ -84,7 +84,7 @@ class Torch(BaseOptimizer):
                 data[starti + j].displacement.requires_grad_(True)
                 symmetric_displacement = 0.5 * (data[starti + j].displacement + 
                   data[starti + j].displacement.transpose(-1, -2))
-                data[starti + j].pos = data[j].pos + torch.bmm(
+                data[starti + j].pos = data[starti + j].pos + torch.bmm(
                   data[starti + j].pos.unsqueeze(-2),
                   symmetric_displacement).squeeze(-2)            
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
