@@ -81,10 +81,17 @@ class Torch(BaseOptimizer):
                 print(data[starti + j].pos.size())
                 data[starti + j].displacement = torch.zeros((data[starti + j].pos.size()[0], 
                   3, 3), dtype = data[starti + j].pos.dtype, 
-                  device=data[starti + j].pos.device)            
+                  device=data[starti + j].pos.device)
+                print(data[starti + j].displacement.size())
                 data[starti + j].displacement.requires_grad_(True)
                 symmetric_displacement = 0.5 * (data[starti + j].displacement + 
                   data[starti + j].displacement.transpose(-1, -2))
+                print(symmetric_displacement.size())
+                print(data[starti + j].pos.unsqueeze(-2).size())
+                print(symmetric_displacement.size())
+                print(torch.bmm(
+                  data[starti + j].pos.unsqueeze(-2),
+                  symmetric_displacement).squeeze(-2).size())
                 data[starti + j].pos = data[starti + j].pos + torch.bmm(
                   data[starti + j].pos.unsqueeze(-2),
                   symmetric_displacement).squeeze(-2)            
