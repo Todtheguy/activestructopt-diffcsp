@@ -90,10 +90,10 @@ class Torch(BaseOptimizer):
                 print(data[starti + j].pos.unsqueeze(-2).size())
                 print(symmetric_displacement.size())
                 print(torch.bmm(
-                  data[starti + j].pos.unsqueeze(-2),
+                  data[starti + j].pos.unsqueeze(0),
                   symmetric_displacement).squeeze(-2).size())
                 data[starti + j].pos = data[starti + j].pos + torch.bmm(
-                  data[starti + j].pos.unsqueeze(-2),
+                  data[starti + j].pos.unsqueeze(0),
                   symmetric_displacement).squeeze(-2)            
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
                   data[starti + j].cell, symmetric_displacement) 
