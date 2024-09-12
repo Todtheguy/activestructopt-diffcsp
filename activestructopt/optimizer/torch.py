@@ -79,7 +79,7 @@ class Torch(BaseOptimizer):
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
                 #https://github.com/atomistic-machine-learning/schnetpack/issues/165
                 print(data[starti + j].pos.size())
-                data[starti + j].displacement = torch.zeros((data[starti + j].pos.size()[0], 
+                data[starti + j].displacement = torch.zeros((1, 
                   3, 3), dtype = data[starti + j].pos.dtype, 
                   device=data[starti + j].pos.device)
                 print(data[starti + j].displacement.size())
