@@ -72,6 +72,8 @@ class Torch(BaseOptimizer):
               data[j].pos.requires_grad_(False)
               
             for j in range(stopi - starti + 1):
+              print('1')
+              print(data[starti + j].cell.is_leaf)
               if optimize_atoms:
                 data[starti + j].pos.requires_grad_()
               if optimize_lattice:
@@ -80,6 +82,7 @@ class Torch(BaseOptimizer):
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
                 #https://github.com/atomistic-machine-learning/schnetpack/issues/165
+                print('2')
                 print(data[starti + j])
                 data[starti + j].displacement = torch.zeros((1, 
                   3, 3), dtype = data[starti + j].pos.dtype, 
@@ -92,12 +95,17 @@ class Torch(BaseOptimizer):
                   symmetric_displacement).squeeze(-2)).squeeze(0)            
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
                   data[starti + j].cell, symmetric_displacement) 
-              print(data[starti + j])
+                print('3')
+                print(data[starti + j].cell.is_leaf)
               reprocess_data(data[starti + j], dataset.config, device, 
                 nodes = False)
+              print('4')
+              print(data[starti + j].cell.is_leaf)
 
             predictions = model.predict(data[starti:(stopi+1)], 
               prepared = True, mask = dataset.simfunc.mask)
+            print('5')
+            print(data[starti + j].cell.is_leaf)
 
             objs, obj_total = objective.get(predictions, target, 
               device = device, N = stopi - starti + 1)
@@ -126,8 +134,10 @@ class Torch(BaseOptimizer):
                     data[starti + j].cell[:, 0, :], torch.cross(
                     data[starti + j].cell[:, 1, :], 
                     data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
+                  print(data[starti + j].cell.is_leaf)
                   data[starti + j].cell.grad = -data[
                     starti + j].displacement.grad / volume.view(-1, 1, 1)
+                  print(data[starti + j].cell.is_leaf)
                   
               optimizer.step()
             del predictions, objs, obj_total
