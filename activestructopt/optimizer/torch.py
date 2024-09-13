@@ -66,6 +66,8 @@ class Torch(BaseOptimizer):
 
             optimizer.zero_grad()
             for j in range(nstarts):
+              if hasattr(data[j], 'displacement'):
+                data[j].displacement = data[j].displacement.requires_grad_(False)
               data[j].cell.requires_grad_(False)
               data[j].pos.requires_grad_(False)
               
