@@ -92,7 +92,9 @@ class Torch(BaseOptimizer):
                   data[starti + j].displacement.transpose(-1, -2))
                 data[starti + j].pos = (data[starti + j].pos + torch.bmm(
                   data[starti + j].pos.unsqueeze(0),
-                  symmetric_displacement).squeeze(-2)).squeeze(0)            
+                  symmetric_displacement).squeeze(-2)).squeeze(0)
+                print('2.5')
+                print(data[starti + j].cell.is_leaf)
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
                   data[starti + j].cell, symmetric_displacement) 
                 print('3')
