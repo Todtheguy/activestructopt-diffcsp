@@ -76,7 +76,7 @@ class Torch(BaseOptimizer):
               print(data[starti + j].cell.is_leaf)
               if optimize_atoms:
                 data[starti + j].pos.requires_grad_()
-              if optimize_lattice:
+              #if optimize_lattice:
                 #data[starti + j].cell.requires_grad_()
               if optimize_lattice:
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
