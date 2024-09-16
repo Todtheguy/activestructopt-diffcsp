@@ -68,7 +68,7 @@ class Torch(BaseOptimizer):
             for j in range(nstarts):
               if hasattr(data[j], 'displacement'):
                 data[j].displacement = data[j].displacement.requires_grad_(False)
-              data[j].cell.requires_grad_(False)
+              #data[j].cell.requires_grad_(False)
               data[j].pos.requires_grad_(False)
               
             for j in range(stopi - starti + 1):
@@ -77,7 +77,7 @@ class Torch(BaseOptimizer):
               if optimize_atoms:
                 data[starti + j].pos.requires_grad_()
               if optimize_lattice:
-                data[starti + j].cell.requires_grad_()
+                #data[starti + j].cell.requires_grad_()
               if optimize_lattice:
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
