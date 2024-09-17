@@ -68,8 +68,11 @@ class RMC(BaseOptimizer):
       data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
         preprocess = False) for s in structures]
         
-      predictions = model.predict(data, prepared = True, 
-      mask = dataset.simfunc.mask)
+      try:
+        predictions = model.predict(data, prepared = True, 
+          mask = dataset.simfunc.mask)
+      except:
+        print(data)
 
       objs, _ = objective.get(predictions, target, 
         device = device, N = starts)
