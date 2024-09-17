@@ -120,7 +120,6 @@ class Torch(BaseOptimizer):
                 best_cell = data[starti + obj_arg.item()].cell[0].detach()
 
             if i != iters_per_start - 1:
-              obj_total.backward()
               if optimize_lattice:
                 # https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/torchmd_etEarly.py#L229
                 for j in range(stopi - starti + 1):
@@ -128,10 +127,18 @@ class Torch(BaseOptimizer):
                     data[starti + j].cell[:, 0, :], torch.cross(
                     data[starti + j].cell[:, 1, :], 
                     data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
-                  print(data[starti + j].cell.is_leaf)
-                  data[starti + j].cell.grad = -data[
-                    starti + j].displacement.grad / volume.view(-1, 1, 1)
-                  print(data[starti + j].cell.is_leaf)
+                  grad = torch.autograd.grad(
+                    obj_total,
+                    [data.pos, data.displacement],
+                    grad_outputs = torch.ones_like(obj_total)) 
+                  data[starti + j].pos.grad = grad[0]
+                  data[starti + j].cell.grad = -grad[1] / volume.view(-1, 1, 1)
+              else:
+                grad = torch.autograd.grad(
+                  obj_total,
+                  [data.pos],
+                  grad_outputs = torch.ones_like(obj_total)) 
+                data[starti + j].pos.grad = grad[0]         
                   
               optimizer.step()
             del predictions, objs, obj_total
