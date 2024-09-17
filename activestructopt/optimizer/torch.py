@@ -56,10 +56,6 @@ class Torch(BaseOptimizer):
     split = int(np.ceil(np.log2(nstarts)))
     orig_split = split
 
-    for j in range(nstarts):
-      data[j].cell.requires_grad_(True)
-      data[j].pos.requires_grad_(True)
-
     for i in range(iters_per_start):
       predicted = False
       while not predicted:
@@ -70,20 +66,19 @@ class Torch(BaseOptimizer):
 
             optimizer.zero_grad()
             for j in range(nstarts):
-              if hasattr(data[j], 'displacement'):
-                data[j].displacement = data[j].displacement.requires_grad_(False)
-              #data[j].cell.requires_grad_(False)
-              #data[j].pos.requires_grad_(False)
+              data[j].cell.requires_grad_(False)
+              data[j].pos.requires_grad_(False)
               
             for j in range(stopi - starti + 1):
-              #if optimize_atoms:
-              #  data[starti + j].pos.requires_grad_()
-              #if optimize_lattice:
-                #data[starti + j].cell.requires_grad_()
+              if optimize_atoms:
+                data[starti + j].pos.requires_grad_()
+              if optimize_lattice:
+                data[starti + j].cell.requires_grad_()
               if optimize_lattice:
                 #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
                 #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
                 #https://github.com/atomistic-machine-learning/schnetpack/issues/165
+                print(data[starti + j])
                 data[starti + j].displacement = torch.zeros((1, 
                   3, 3), dtype = data[starti + j].pos.dtype, 
                   device=data[starti + j].pos.device)
@@ -92,9 +87,10 @@ class Torch(BaseOptimizer):
                   data[starti + j].displacement.transpose(-1, -2))
                 data[starti + j].pos = (data[starti + j].pos + torch.bmm(
                   data[starti + j].pos.unsqueeze(0),
-                  symmetric_displacement).squeeze(-2)).squeeze(0)
+                  symmetric_displacement).squeeze(-2)).squeeze(0)            
                 data[starti + j].cell = data[starti + j].cell + torch.bmm(
                   data[starti + j].cell, symmetric_displacement) 
+              print(data[starti + j])
               reprocess_data(data[starti + j], dataset.config, device, 
                 nodes = False)
 
@@ -120,6 +116,7 @@ class Torch(BaseOptimizer):
                 best_cell = data[starti + obj_arg.item()].cell[0].detach()
 
             if i != iters_per_start - 1:
+              obj_total.backward()
               if optimize_lattice:
                 # https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/torchmd_etEarly.py#L229
                 for j in range(stopi - starti + 1):
@@ -127,18 +124,8 @@ class Torch(BaseOptimizer):
                     data[starti + j].cell[:, 0, :], torch.cross(
                     data[starti + j].cell[:, 1, :], 
                     data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
-                  grad = torch.autograd.grad(
-                    obj_total,
-                    [data[starti + j].pos, data[starti + j].displacement],
-                    grad_outputs = torch.ones_like(obj_total)) 
-                  data[starti + j].pos.grad = grad[0]
-                  data[starti + j].cell.grad = -grad[1] / volume.view(-1, 1, 1)
-              else:
-                grad = torch.autograd.grad(
-                  obj_total,
-                  [data[starti + j].pos],
-                  grad_outputs = torch.ones_like(obj_total)) 
-                data[starti + j].pos.grad = grad[0]         
+                  data[starti + j].cell.grad = -data[
+                    starti + j].displacement.grad / volume.view(-1, 1, 1)
                   
               optimizer.step()
             del predictions, objs, obj_total
