@@ -56,6 +56,10 @@ class Torch(BaseOptimizer):
     split = int(np.ceil(np.log2(nstarts)))
     orig_split = split
 
+    for j in range(nstarts):
+      data[j].cell.requires_grad_(True)
+      data[j].pos.requires_grad_(True)
+
     for i in range(iters_per_start):
       predicted = False
       while not predicted:
@@ -69,13 +73,11 @@ class Torch(BaseOptimizer):
               if hasattr(data[j], 'displacement'):
                 data[j].displacement = data[j].displacement.requires_grad_(False)
               #data[j].cell.requires_grad_(False)
-              data[j].pos.requires_grad_(False)
+              #data[j].pos.requires_grad_(False)
               
             for j in range(stopi - starti + 1):
-              print('1')
-              print(data[starti + j].cell.is_leaf)
-              if optimize_atoms:
-                data[starti + j].pos.requires_grad_()
+              #if optimize_atoms:
+              #  data[starti + j].pos.requires_grad_()
               #if optimize_lattice:
                 #data[starti + j].cell.requires_grad_()
               if optimize_lattice:
