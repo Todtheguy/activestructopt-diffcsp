@@ -18,7 +18,7 @@ class Torch(BaseOptimizer):
 
   def run(self, model: BaseModel, dataset: BaseDataset, 
     objective: BaseObjective, sampler: BaseSampler, 
-    starts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
+    nstarts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
     optimizer_args = {}, optimize_atoms = True, 
     optimize_lattice = False, save_obj_values = False, **kwargs) -> IStructure:
     
@@ -30,7 +30,6 @@ class Torch(BaseOptimizer):
       ) if save_obj_values else None
     
     device = model.device
-    nstarts = len(starting_structures)
     natoms = len(starting_structures[0])
     ljrmins = torch.tensor(lj_rmins, device = device)
     best_obj = torch.tensor([float('inf')], device = device)
