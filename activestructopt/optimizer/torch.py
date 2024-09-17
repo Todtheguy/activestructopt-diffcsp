@@ -129,14 +129,14 @@ class Torch(BaseOptimizer):
                     data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
                   grad = torch.autograd.grad(
                     obj_total,
-                    [data.pos, data.displacement],
+                    [data[starti + j].pos, data[starti + j].displacement],
                     grad_outputs = torch.ones_like(obj_total)) 
                   data[starti + j].pos.grad = grad[0]
                   data[starti + j].cell.grad = -grad[1] / volume.view(-1, 1, 1)
               else:
                 grad = torch.autograd.grad(
                   obj_total,
-                  [data.pos],
+                  [data[starti + j].pos],
                   grad_outputs = torch.ones_like(obj_total)) 
                 data[starti + j].pos.grad = grad[0]         
                   
