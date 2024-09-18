@@ -69,6 +69,7 @@ class RMC(BaseOptimizer):
         preprocess = False) for s in structures]
         
       #try:
+      print(structures)
       predictions = model.predict(data, prepared = True, 
         mask = dataset.simfunc.mask)
       #  print('.')
