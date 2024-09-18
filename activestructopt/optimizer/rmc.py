@@ -51,9 +51,9 @@ class RMC(BaseOptimizer):
     σr = 0.01, σl = 0.01, σθ = 0.1, 
     save_obj_values = False, **kwargs) -> IStructure:
 
-    ljrmins = torch.tensor(lj_rmins, device = device)
-
     device = model.device
+    ljrmins = torch.tensor(lj_rmins, device = device)
+    
     structures = [dataset.structures[np.random.randint(len(
       dataset.structures))].copy() for _ in range(starts)]
     prev_structures = [s.copy for s in structures]
