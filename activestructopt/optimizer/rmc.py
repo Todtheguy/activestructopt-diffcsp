@@ -64,7 +64,7 @@ class RMC(BaseOptimizer):
 
     prev_objs = torch.inf * torch.ones(starts)
 
-    for _ in range(iters_per_start):
+    for i in range(iters_per_start):
       data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
         preprocess = True) for s in structures]
         
@@ -79,7 +79,7 @@ class RMC(BaseOptimizer):
       objs, _ = objective.get(predictions, target, 
         device = device, N = starts)
       if save_obj_values:
-        obj_vals[j, :] = objs
+        obj_vals[i, :] = objs
 
       Δobjs = objs - prev_objs
       better = Δobjs <= 0
