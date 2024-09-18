@@ -7,6 +7,7 @@ from activestructopt.common.registry import registry
 from pymatgen.core.structure import IStructure
 import numpy as np
 from activestructopt.common.dataloader import prepare_data
+from activestructopt.common.constraints import lj_rmins, lj_repulsion
 import torch
 
 def step(structure, latticeprob, σr, σl, σθ, step_type = 'one'):
@@ -50,6 +51,8 @@ class RMC(BaseOptimizer):
     σr = 0.01, σl = 0.01, σθ = 0.1, 
     save_obj_values = False, **kwargs) -> IStructure:
 
+    ljrmins = torch.tensor(lj_rmins, device = device)
+
     device = model.device
     structures = [dataset.structures[np.random.randint(len(
       dataset.structures))].copy() for _ in range(starts)]
@@ -62,28 +65,26 @@ class RMC(BaseOptimizer):
     if save_obj_values:
       obj_vals = torch.zeros((iters_per_start, starts))
 
-    prev_objs = torch.inf * torch.ones(starts)
+    prev_objs = torch.inf * torch.ones(starts, device = device)
 
     for i in range(iters_per_start):
       data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
         preprocess = True) for s in structures]
         
-      #try:
-      print(structures)
       predictions = model.predict(data, prepared = True, 
         mask = dataset.simfunc.mask)
-      #  print('.')
-      #except Error as e:
-      #  print(structures)
 
       objs, _ = objective.get(predictions, target, 
         device = device, N = starts)
+
+      for j in range(starts):
+        objs[j] += lj_repulsion(data[j], ljrmins)
       if save_obj_values:
-        obj_vals[i, :] = objs
+        obj_vals[i, :] = objs.cpu()
 
       Δobjs = objs - prev_objs
       better = Δobjs <= 0
-      hastings = torch.log(torch.rand(starts)) < Δobjs / (-2 * σ ** 2)
+      hastings = torch.log(torch.rand(starts, device = device)) < Δobjs / (-2 * σ ** 2)
       accept = torch.logical_or(better, hastings)
       for j in range(starts):
         if (objs[j] < best_obj).item():
