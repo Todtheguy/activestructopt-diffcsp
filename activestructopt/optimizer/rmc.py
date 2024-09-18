@@ -66,7 +66,7 @@ class RMC(BaseOptimizer):
 
     for _ in range(iters_per_start):
       data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
-        preprocess = False) for s in structures]
+        preprocess = True) for s in structures]
         
       #try:
       print(structures)

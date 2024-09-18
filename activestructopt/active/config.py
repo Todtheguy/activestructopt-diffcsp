@@ -201,7 +201,7 @@ torchmd_rmc_config = {
     'switch_profiles': [], 
     'profiles': [{'iterations': 500, 'lr': 0.001}]},
   'optimizer': {'name': 'RMC',
-   'args': {'starts': 1, 
+   'args': {'starts': 10, 
     'iters_per_start': 1000, 
     'save_obj_values': True}, 
    'switch_profiles': [20],
