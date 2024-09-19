@@ -91,7 +91,7 @@ class RMC(BaseOptimizer):
             for j in range(stopi - starti + 1):
               objs[j] += lj_repulsion(data[j], ljrmins)
             if save_obj_values:
-              obj_vals[i, :] = objs.cpu()
+              obj_vals[i, starti:(stopi + 1)] = objs.cpu()
 
             Δobjs = objs - prev_objs[starti:(stopi + 1)]
             better = Δobjs <= 0
