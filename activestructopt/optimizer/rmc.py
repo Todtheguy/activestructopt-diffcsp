@@ -67,34 +67,51 @@ class RMC(BaseOptimizer):
 
     prev_objs = torch.inf * torch.ones(starts, device = device)
 
+    split = int(np.ceil(np.log2(starts)))
+    orig_split = split
+
     for i in range(iters_per_start):
-      data = [prepare_data(s, dataset.config, pos_grad = True, device = device, 
-        preprocess = True) for s in structures]
-        
-      predictions = model.predict(data, prepared = True, 
-        mask = dataset.simfunc.mask)
+      predicted = False
+      while not predicted:
+        try:
+          for k in range(2 ** (orig_split - split)):
+            starti = k * (2 ** split)
+            stopi = min((k + 1) * (2 ** split) - 1, starts - 1)
 
-      objs, _ = objective.get(predictions, target, 
-        device = device, N = starts)
+            data = [prepare_data(s, dataset.config, pos_grad = True, 
+              device = device, preprocess = True
+              ) for s in structures[starti:(stopi + 1)]]
+              
+            predictions = model.predict(data, prepared = True, 
+              mask = dataset.simfunc.mask)
 
-      for j in range(starts):
-        objs[j] += lj_repulsion(data[j], ljrmins)
-      if save_obj_values:
-        obj_vals[i, :] = objs.cpu()
+            objs, _ = objective.get(predictions, target, 
+              device = device, N = stopi - starti + 1)
 
-      Δobjs = objs - prev_objs
-      better = Δobjs <= 0
-      hastings = torch.log(torch.rand(starts, device = device)) < Δobjs / (-2 * σ ** 2)
-      accept = torch.logical_or(better, hastings)
-      for j in range(starts):
-        if (objs[j] < best_obj).item():
-          best_obj = objs[j]
-          best_structure = structures[j]
-        if (accept[j]).item():
-          prev_structures[j] = structures[j].copy()
-          prev_objs[j] = objs[j]
-        structures[j] = prev_structures[j].copy()
-        structures[j] = step(structures[j], latticeprob, σr, σl, σθ, 
-          step_type = 'all')
+            for j in range(stopi - starti + 1):
+              objs[j] += lj_repulsion(data[j], ljrmins)
+            if save_obj_values:
+              obj_vals[i, :] = objs.cpu()
+
+            Δobjs = objs - prev_objs[starti:(stopi + 1)]
+            better = Δobjs <= 0
+            hastings = torch.log(torch.rand(stopi - starti + 1, 
+              device = device)) < Δobjs / (-2 * σ ** 2)
+            accept = torch.logical_or(better, hastings)
+            for j in range(stopi - starti + 1):
+              if (objs[j] < best_obj).item():
+                best_obj = objs[j]
+                best_structure = structures[starti + j]
+              if (accept[j]).item():
+                prev_structures[starti + j] = structures[starti + j].copy()
+                prev_objs[starti + j] = objs[j]
+              structures[starti + j] = prev_structures[starti + j].copy()
+              structures[starti + j] = step(structures[starti + j], latticeprob, 
+                σr, σl, σθ, step_type = 'all')
+          predicted = True
+          del data, predictions, objs, hastings, accept, Δobjs, better
+        except torch.cuda.OutOfMemoryError:
+          split -= 1
+          assert split >= 0, "Out of memory with only one structure"
 
     return best_structure, obj_vals
