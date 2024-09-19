@@ -24,9 +24,9 @@ class Torch(BaseOptimizer):
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else sampler.sample(
-      ) for j in range(starts)]
+      ) for j in range(nstarts)]
 
-    obj_values = torch.zeros((iters_per_start, starts), device = 'cpu'
+    obj_values = torch.zeros((iters_per_start, nstarts), device = 'cpu'
       ) if save_obj_values else None
     
     device = model.device
