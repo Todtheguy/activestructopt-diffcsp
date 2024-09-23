@@ -23,7 +23,7 @@ def main():
 
 	al = ActiveLearning(rdf_func, target_spec, config, pristine_structure, 
 		index = sys.argv[1], target_structure = target_structure)
-	al.optimize(save_progress_dir = 'progress')
+	al.optimize(save_progress_dir = '~/ActiveStructOpt/activestructopt/testing/progress')
 	al.save("~/ActiveStructOpt/activestructopt/testing/res/" + str(sys.argv[1]) + ".pkl", 
 		additional_data = {'target_structure': target_structure})
 
