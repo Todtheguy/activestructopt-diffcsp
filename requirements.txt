@@ -1,6 +1,7 @@
-pymatgen==2023.5.10
-scipy==1.11.4
-numpy==1.23.0
+pymatgen
+scipy
+numpy
 nlopt==2.7.1
 bayesian-optimization==1.4.3
 periodictable==1.6.1
+botorch==0.10.0

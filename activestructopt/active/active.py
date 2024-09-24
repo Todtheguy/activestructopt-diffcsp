@@ -1,103 +1,146 @@
-from activestructopt.optimization.basinhopping.basinhopping import basinhop
-from activestructopt.gnn.ensemble import Ensemble
-from activestructopt.dataset.dataset import make_data_splits, update_datasets
-from activestructopt.optimization.shared.constraints import lj_reject
+from activestructopt.common.registry import registry, setup_imports
+from torch.cuda import empty_cache
+from torch import inference_mode
 import numpy as np
-import gc
-import torch
-import pickle
-import sys
+from gc import collect
+from pickle import dump, load
+from os.path import join as pathjoin
+from os.path import exists as pathexists
+from os import remove
+from copy import deepcopy
+from traceback import format_exc
 
-def active_learning(
-    optfunc, 
-    args, 
-    target,
-    config, 
-    initial_structure, 
-    max_forward_calls = 100,
-    N = 30, 
-    k = 5, 
-    perturbrmin = 0.0, 
-    perturbrmax = 1.0, 
-    split = 1/3, 
-    device = 'cuda',
-    bh_starts = 128,
-    bh_iters_per_start = 100,
-    bh_lr = 0.01,
-    bh_step_size = 0.1,
-    bh_σ = 0.0025,
-    print_mses = True,
-    save_progress_dir = None,
-    λ = 1.0,
-    seed = 0,
-    finetune_epochs = 500,
-    lr_reduction = 1.0,
-    ):
-  structures, ys, datasets, kfolds, test_indices, test_data, test_targets = make_data_splits(
-    initial_structure,
-    optfunc,
-    args,
-    config['dataset'],
-    N = N,
-    k = k,
-    perturbrmin = perturbrmin,
-    perturbrmax = perturbrmax,
-    split = split,
-    device = device,
-    seed = seed,
-  )
-  config['dataset']['preprocess_params']['output_dim'] = len(ys[0])
-  lr1, lr2 = config['optim']['lr'], config['optim']['lr'] / lr_reduction
-  mses = [np.mean((y - target) ** 2) for y in ys]
-  if print_mses:
-    print(mses)
-  active_steps = max_forward_calls - N
-  ensemble = Ensemble(k, config)
-  for i in range(active_steps):
-    starting_structures = [initial_structure.copy() for _ in range(bh_starts)]
-    for j in range(np.minimum(len(structures), bh_starts)):
-      starting_structures[j] = structures[j].copy()
-    if len(structures) < bh_starts:
-      for j in range(len(structures), bh_starts):
-        rejected = True
-        while rejected:
-          new_structure = initial_structure.copy()
-          new_structure.perturb(np.random.uniform(perturbrmin, perturbrmax))
-          rejected = lj_reject(new_structure)
-        starting_structures[j] = new_structure.copy()
+class ActiveLearning():
+  def __init__(self, simfunc, target, config, initial_structure, 
+    index = -1, target_structure = None, progress_file = None):
+    setup_imports()
 
-    ensemble.train(datasets, iterations = config['optim'][
-      'max_epochs'] if i == 0 else finetune_epochs, lr = lr1 if i == 0 else lr2)
-    ensemble.set_scalar_calibration(test_data, test_targets)
-    new_structure = basinhop(ensemble, starting_structures, target, 
-      config['dataset'], nhops = bh_starts, niters = bh_iters_per_start, 
-      λ = 0.0 if i == (active_steps - 1) else λ, lr = bh_lr, 
-      step_size = bh_step_size, rmcσ = bh_σ)
-    structures.append(new_structure)
-    datasets, y = update_datasets(
-      datasets,
-      new_structure,
-      config['dataset'],
-      optfunc,
-      args,
-      device,
-    )
-    ys.append(y)
-    new_mse = np.mean((y - target) ** 2)
-    mses.append(new_mse)
-    if print_mses:
-      print(new_mse)
-    gc.collect()
-    torch.cuda.empty_cache()
-    if save_progress_dir is not None:
-      res = {'index': sys.argv[1],
-            'iter': i,
-            'structures': structures,
-            'ys': ys,
-            'mses': mses}
+    self.simfunc = simfunc
+    self.config = simfunc.setup_config(config)
+    self.index = index
+    self.iteration = 0
 
-      with open(save_progress_dir + "/" + str(sys.argv[1]) + "_" + str(i) + ".pkl", "wb") as file:
-          pickle.dump(res, file)
+    self.model_params = None
+    self.model_errs = []
+    self.model_metrics = []
+    self.opt_obj_values = []
+    self.new_structure_predictions = []
+    self.target_structure = target_structure
+    if not (target_structure is None):
+      self.target_predictions = []
 
-  return structures, ys, mses, (
-      datasets, kfolds, test_indices, test_data, test_targets, ensemble)
+    sampler_cls = registry.get_sampler_class(
+      self.config['aso_params']['sampler']['name'])
+    self.sampler = sampler_cls(initial_structure, 
+      **(self.config['aso_params']['sampler']['args']))
+
+    if progress_file is not None:
+      with open(progress_file, 'rb') as f:
+        progress = load(f)
+      self.dataset = progress['dataset']
+      self.model_params = progress['model_params']
+      self.iteration = progress['dataset'].N - progress['dataset'].start_N - 1
+    else:
+      dataset_cls = registry.get_dataset_class(
+        self.config['aso_params']['dataset']['name'])
+      self.dataset = dataset_cls(simfunc, self.sampler, initial_structure, 
+        target, self.config['dataset'], **(
+        self.config['aso_params']['dataset']['args']))
+
+    model_cls = registry.get_model_class(
+      self.config['aso_params']['model']['name'])
+    self.model = model_cls(self.config, 
+      **(self.config['aso_params']['model']['args']))
+
+    self.traceback = None
+    self.error = None
+  
+  def optimize(self, print_mismatches = True, save_progress_dir = None):
+    try:
+      active_steps = self.config['aso_params'][
+        'max_forward_calls'] - self.dataset.start_N
+
+      if print_mismatches:
+        print(self.dataset.mismatches)
+
+      for i in range(self.iteration, active_steps):
+        train_profile = self.config['aso_params']['model']['profiles'][
+          np.searchsorted(-np.array(
+            self.config['aso_params']['model']['switch_profiles']), 
+            -(active_steps - i))]
+        opt_profile = self.config['aso_params']['optimizer']['profiles'][
+          np.searchsorted(-np.array(
+            self.config['aso_params']['optimizer']['switch_profiles']), 
+            -(active_steps - i))]
+        
+        model_err, metrics, self.model_params = self.model.train(
+          self.dataset, **(train_profile))
+        self.model_errs.append(model_err)
+        self.model_metrics.append(metrics)
+
+        if not (self.target_structure is None):
+          with inference_mode():
+            self.target_predictions.append(self.model.predict(
+              self.target_structure, 
+              mask = self.dataset.simfunc.mask).cpu().numpy())
+
+        objective_cls = registry.get_objective_class(opt_profile['name'])
+        objective = objective_cls(**(opt_profile['args']))
+
+        optimizer_cls = registry.get_optimizer_class(
+          self.config['aso_params']['optimizer']['name'])
+
+        new_structure, obj_values = optimizer_cls().run(self.model, 
+          self.dataset, objective, self.sampler, 
+          **(self.config['aso_params']['optimizer']['args']))
+        self.opt_obj_values.append(obj_values)
+        
+        #print(new_structure)
+        #for ensemble_i in range(len(metrics)):
+        #  print(metrics[ensemble_i]['val_error'])
+        self.dataset.update(new_structure)
+        with inference_mode():
+          self.new_structure_predictions.append(self.model.predict(
+            new_structure, 
+            mask = self.dataset.simfunc.mask).cpu().numpy())
+
+        if print_mismatches:
+          print(self.dataset.mismatches[-1])
+
+        collect()
+        empty_cache()
+        
+        if save_progress_dir is not None:
+          self.save(pathjoin(save_progress_dir, str(self.index) + "_" + str(
+            i) + ".pkl"))
+          prev_progress_file = pathjoin(save_progress_dir, str(self.index
+            ) + "_" + str(i - 1) + ".pkl")
+          if pathexists(prev_progress_file):
+            remove(prev_progress_file)
+    except Exception as err:
+      self.traceback = format_exc()
+      self.error = err
+      print(self.traceback)
+      print(self.error)
+
+  def save(self, filename, additional_data = {}):
+    cpu_model_params = deepcopy(self.model_params)
+    for i in range(len(cpu_model_params)):
+      for param_tensor in cpu_model_params[i]:
+        cpu_model_params[i][param_tensor] = cpu_model_params[i][
+          param_tensor].detach().cpu()
+    res = {'index': self.index,
+          'dataset': self.dataset,
+          'model_errs': self.model_errs,
+          'model_metrics': self.model_metrics,
+          'model_params': self.model_params,
+          'opt_obj_values': self.opt_obj_values,
+          'new_structure_predictions': self.new_structure_predictions,
+          'error': self.error,
+          'traceback': self.traceback}
+    if not (self.target_structure is None):
+      res['target_predictions'] = self.target_predictions
+    for k, v in additional_data.items():
+      res[k] = v
+    with open(filename, "wb") as file:
+      dump(res, file)
