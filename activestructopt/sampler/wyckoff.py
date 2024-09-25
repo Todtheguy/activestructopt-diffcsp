@@ -41,7 +41,7 @@ class Wyckoff(BaseSampler):
       except:
         continue
     self.possible_sgs = np.array(self.possible_sgs)
-    self.sg_probs = np.array([sg_dist[i - 1] + 1 for i in self.possible_sgs])
+    self.sg_probs = np.array([sg_dist[i - 1] + 1.0 for i in self.possible_sgs])
     # Adding one allows non-zero probability for sgs not in Materials Project
     self.sg_probs /= np.sum(self.sg_probs)
 
