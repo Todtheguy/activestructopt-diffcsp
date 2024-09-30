@@ -20,7 +20,8 @@ class Torch(BaseOptimizer):
     objective: BaseObjective, sampler: BaseSampler, 
     starts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
     optimizer_args = {}, optimize_atoms = True, 
-    optimize_lattice = False, save_obj_values = False, **kwargs) -> IStructure:
+    optimize_lattice = False, save_obj_values = False, 
+    constraint_scale = 1.0, **kwargs) -> IStructure:
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else sampler.sample(
@@ -82,8 +83,8 @@ class Torch(BaseOptimizer):
             objs, obj_total = objective.get(predictions, target, 
               device = device, N = stopi - starti + 1)
             for j in range(stopi - starti + 1):
-              objs[j] += lj_repulsion(data[starti + j], ljrmins)
-              obj_total += lj_repulsion(data[starti + j], ljrmins)
+              objs[j] += constraint_scale * lj_repulsion(data[starti + j], ljrmins)
+              obj_total += constraint_scale * lj_repulsion(data[starti + j], ljrmins)
               objs[j] = objs[j].detach()
               if save_obj_values:
                 obj_values[i, starti + j] = objs[j].detach().cpu()
