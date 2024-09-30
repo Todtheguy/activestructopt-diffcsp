@@ -18,18 +18,20 @@ class Torch(BaseOptimizer):
 
   def run(self, model: BaseModel, dataset: BaseDataset, 
     objective: BaseObjective, sampler: BaseSampler, 
-    nstarts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
+    starts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
     optimizer_args = {}, optimize_atoms = True, 
-    optimize_lattice = False, save_obj_values = False, **kwargs) -> IStructure:
+    optimize_lattice = False, save_obj_values = False, 
+    constraint_scale = 1.0, **kwargs) -> IStructure:
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else sampler.sample(
-      ) for j in range(nstarts)]
+      ) for j in range(starts)]
 
-    obj_values = torch.zeros((iters_per_start, nstarts), device = 'cpu'
+    obj_values = torch.zeros((iters_per_start, starts), device = 'cpu'
       ) if save_obj_values else None
     
     device = model.device
+    nstarts = len(starting_structures)
     natoms = len(starting_structures[0])
     ljrmins = torch.tensor(lj_rmins, device = device)
     best_obj = torch.tensor([float('inf')], device = device)
@@ -65,33 +67,13 @@ class Torch(BaseOptimizer):
 
             optimizer.zero_grad()
             for j in range(nstarts):
-              if hasattr(data[j], 'displacement'):
-                data[j].displacement = data[j].displacement.detach()
-              data[j].cell.detach()
-              data[j].pos.detach()
-              
+              data[j].cell.requires_grad_(False)
+              data[j].pos.requires_grad_(False)
             for j in range(stopi - starti + 1):
               if optimize_atoms:
-                data[starti + j].pos = data[starti + j].pos.detach()
                 data[starti + j].pos.requires_grad_()
               if optimize_lattice:
-                data[starti + j].cell = data[starti + j].cell.detach()
                 data[starti + j].cell.requires_grad_()
-              if optimize_lattice:
-                #https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/base_model.py#L110
-                #https://github.com/mir-group/nequip/blob/main/nequip/nn/_grad_output.py
-                #https://github.com/atomistic-machine-learning/schnetpack/issues/165
-                data[starti + j].displacement = torch.zeros((1, 
-                  3, 3), dtype = data[starti + j].pos.dtype, 
-                  device=data[starti + j].pos.device)
-                data[starti + j].displacement.requires_grad_(True)
-                symmetric_displacement = 0.5 * (data[starti + j].displacement + 
-                  data[starti + j].displacement.transpose(-1, -2))
-                data[starti + j].pos = (data[starti + j].pos + torch.bmm(
-                  data[starti + j].pos.unsqueeze(0),
-                  symmetric_displacement).squeeze(-2)).squeeze(0)            
-                data[starti + j].cell = data[starti + j].cell + torch.bmm(
-                  data[starti + j].cell, symmetric_displacement) 
               reprocess_data(data[starti + j], dataset.config, device, 
                 nodes = False)
 
@@ -101,8 +83,8 @@ class Torch(BaseOptimizer):
             objs, obj_total = objective.get(predictions, target, 
               device = device, N = stopi - starti + 1)
             for j in range(stopi - starti + 1):
-              objs[j] += lj_repulsion(data[starti + j], ljrmins)
-              obj_total += lj_repulsion(data[starti + j], ljrmins)
+              objs[j] += constraint_scale * lj_repulsion(data[starti + j], ljrmins)
+              obj_total += constraint_scale * lj_repulsion(data[starti + j], ljrmins)
               objs[j] = objs[j].detach()
               if save_obj_values:
                 obj_values[i, starti + j] = objs[j].detach().cpu()
@@ -118,16 +100,6 @@ class Torch(BaseOptimizer):
 
             if i != iters_per_start - 1:
               obj_total.backward()
-              if optimize_lattice:
-                # https://github.com/Fung-Lab/MatDeepLearn_dev/blob/main/matdeeplearn/models/torchmd_etEarly.py#L229
-                for j in range(stopi - starti + 1):
-                  volume = torch.einsum("zi,zi->z", 
-                    data[starti + j].cell[:, 0, :], torch.cross(
-                    data[starti + j].cell[:, 1, :], 
-                    data[starti + j].cell[:, 2, :], dim = 1)).unsqueeze(-1)
-                  data[starti + j].cell.grad = -data[
-                    starti + j].displacement.grad / volume.view(-1, 1, 1)
-                  
               optimizer.step()
             del predictions, objs, obj_total
           predicted = True
