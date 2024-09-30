@@ -7,7 +7,7 @@ import numpy as np
 @registry.register_sampler("Perturbation")
 class Perturbation(BaseSampler):
   def __init__(self, initial_structure: IStructure, perturbrmin = 0.1, 
-    perturbrmax = 1.0, perturblσ = 0.1) -> None:
+    perturbrmax = 1.0, perturblσ = 0.0) -> None:
     self.initial_structure = initial_structure
     self.perturbrmin = perturbrmin
     self.perturbrmax = perturbrmax
