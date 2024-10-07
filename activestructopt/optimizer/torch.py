@@ -109,10 +109,12 @@ class Torch(BaseOptimizer):
 
     if optimize_atoms:
       new_x = best_x.detach().cpu().numpy()
+      del best_x
     if optimize_lattice:
       new_cell = best_cell.detach().cpu().numpy()
-    
-    del best_x, target, data
+      del best_cell
+
+    del target, data
     new_structure = starting_structures[0].copy()
 
     if optimize_lattice:
