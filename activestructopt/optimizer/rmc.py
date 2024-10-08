@@ -62,8 +62,9 @@ class RMC(BaseOptimizer):
     best_obj = torch.tensor([float('inf')], device = device)
     best_structure = None
 
+    obj_vals = None
     if save_obj_values:
-      obj_vals = torch.zeros((iters_per_start, starts))
+      obj_vals = torch.zeros((iters_per_start, starts), device = 'cpu')
 
     prev_objs = torch.inf * torch.ones(starts, device = device)
 
