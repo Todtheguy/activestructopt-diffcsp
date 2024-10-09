@@ -18,10 +18,11 @@ class Torch(BaseOptimizer):
 
   def run(self, model: BaseModel, dataset: BaseDataset, 
     objective: BaseObjective, sampler: BaseSampler, 
-    starts = 128, iters_per_start = 100, lr = 0.01, optimizer = "Adam",
+    starts = 128, iters_per_start = 100, optimizer = "Adam",
     optimizer_args = {}, optimize_atoms = True, 
     optimize_lattice = False, save_obj_values = False, 
-    constraint_scale = 1.0, **kwargs) -> IStructure:
+    constraint_scale = 1.0, pos_lr = 0.001, cell_lr = 0.001,
+    **kwargs) -> IStructure:
     
     starting_structures = [dataset.structures[j].copy(
       ) if j < dataset.N else sampler.sample(
@@ -48,10 +49,10 @@ class Torch(BaseOptimizer):
     
     to_optimize = []
     if optimize_atoms:
-      to_optimize += [d.pos for d in data]
+      to_optimize += [{'params': d.pos, 'lr': pos_lr} for d in data]
     if optimize_lattice:
-      to_optimize += [d.cell for d in data]
-    optimizer = getattr(torch.optim, optimizer)(to_optimize, lr = lr, 
+      to_optimize += [{'params': d.cell, 'lr': cell_lr} for d in data]
+    optimizer = getattr(torch.optim, optimizer)(to_optimize, 
       **(optimizer_args))
     
     split = int(np.ceil(np.log2(nstarts)))
