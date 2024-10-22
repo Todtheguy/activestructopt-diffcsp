@@ -12,13 +12,14 @@ from traceback import format_exc
 
 class ActiveLearning():
   def __init__(self, simfunc, target, config, initial_structure, 
-    index = -1, target_structure = None, progress_file = None):
+    index = -1, target_structure = None, progress_file = None, verbosity = 1):
     setup_imports()
 
     self.simfunc = simfunc
     self.config = simfunc.setup_config(config)
     self.index = index
     self.iteration = 0
+    self.verbosity = verbosity
 
     self.model_params = None
     self.model_errs = []
@@ -75,10 +76,12 @@ class ActiveLearning():
         
         model_err, metrics, self.model_params = self.model.train(
           self.dataset, **(train_profile))
-        self.model_errs.append(model_err)
-        self.model_metrics.append(metrics)
 
-        if not (self.target_structure is None):
+        if self.verbosity > 0:
+          self.model_errs.append(model_err)
+          self.model_metrics.append(metrics)
+
+        if not (self.target_structure is None) and self.verbosity > 0:
           with inference_mode():
             self.target_predictions.append(self.model.predict(
               self.target_structure, 
@@ -93,16 +96,20 @@ class ActiveLearning():
         new_structure, obj_values = optimizer_cls().run(self.model, 
           self.dataset, objective, self.sampler, 
           **(self.config['aso_params']['optimizer']['args']))
-        self.opt_obj_values.append(obj_values)
+        
+        if self.verbosity > 0:
+          self.opt_obj_values.append(obj_values)
         
         #print(new_structure)
         #for ensemble_i in range(len(metrics)):
         #  print(metrics[ensemble_i]['val_error'])
         self.dataset.update(new_structure)
-        with inference_mode():
-          self.new_structure_predictions.append(self.model.predict(
-            new_structure, 
-            mask = self.dataset.simfunc.mask).cpu().numpy())
+
+        if self.verbosity > 0:
+          with inference_mode():
+            self.new_structure_predictions.append(self.model.predict(
+              new_structure, 
+              mask = self.dataset.simfunc.mask).cpu().numpy())
 
         if print_mismatches:
           print(self.dataset.mismatches[-1])
@@ -137,8 +144,15 @@ class ActiveLearning():
           'opt_obj_values': self.opt_obj_values,
           'new_structure_predictions': self.new_structure_predictions,
           'error': self.error,
+          'traceback': self.traceback} if self.verbosity > 0 else {
+          'index': self.index,
+          'ys': self.dataset.ys,
+          'target': self.dataset.target,
+          'mismatches': self.dataset.mismatches,
+          'structures': self.dataset.structures,
+          'error': self.error,
           'traceback': self.traceback}
-    if not (self.target_structure is None):
+    if not (self.target_structure is None) and self.verbosity > 0:
       res['target_predictions'] = self.target_predictions
     for k, v in additional_data.items():
       res[k] = v
