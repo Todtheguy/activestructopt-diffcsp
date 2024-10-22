@@ -40,7 +40,7 @@ class ActiveLearning():
         progress = load(f)
       self.dataset = progress['dataset']
       self.model_params = progress['model_params']
-      self.iteration = progress['dataset'].N - progress['dataset'].start_N - 1
+      self.iteration = progress['dataset'].N - progress['dataset'].start_N
     else:
       dataset_cls = registry.get_dataset_class(
         self.config['aso_params']['dataset']['name'])
@@ -146,10 +146,8 @@ class ActiveLearning():
           'error': self.error,
           'traceback': self.traceback} if self.verbosity > 0 else {
           'index': self.index,
-          'ys': self.dataset.ys,
-          'target': self.dataset.target,
-          'mismatches': self.dataset.mismatches,
-          'structures': self.dataset.structures,
+          'dataset': self.dataset,
+          'model_params': self.model_params,
           'error': self.error,
           'traceback': self.traceback}
     if not (self.target_structure is None) and self.verbosity > 0:
